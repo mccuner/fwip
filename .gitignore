@@ -1,3 +1,7 @@
 app/src/debug/res/values/google_maps_api.xml
 local.properties
+*.iml
+.gradle
+.idea
+build
 
