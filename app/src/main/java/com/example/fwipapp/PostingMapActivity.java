@@ -3,6 +3,8 @@ package com.example.fwipapp;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.text.SpannableString;
@@ -14,6 +16,21 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+// Dependencies added by Matt (in case something breaks)
+import android.support.v4.content.ContextCompat;
+import android.os.Build;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -38,17 +55,22 @@ import com.google.android.gms.maps.UiSettings;
 public class PostingMapActivity extends FragmentActivity implements
         OnMapReadyCallback,
         OnMarkerClickListener,
-        OnMapClickListener {
+        OnMapClickListener,
+        ConnectionCallbacks,
+        OnConnectionFailedListener {
 
     // Private variables, used in the functions defined below
     private GoogleMap mMap;
 
+    // This is for a Google Play client - but it's getting out of hand
+    public GoogleApiClient mGoogleApiClient;
+
+    Location mLastLocation;
+    Marker mCurrLocationMarker;
+    private int tID = 0;
     private int numMarkers;
-
-    private Marker mAnnArbor;
-
-    private static final LatLng ANNARBOR = new LatLng(42.2808, -83.7430);
-
+    public Marker mAnnArbor;
+    private static final LatLng ANNARBOR = new LatLng(42.2920, -83.7163);
     /* This is the custom info window. which I don't wanna see yet. */
 
     // this is how we will customize the info window. we are gonna need to change this up,
@@ -129,16 +151,35 @@ public class PostingMapActivity extends FragmentActivity implements
 //        }
 //    }
 
+    /*
+     * Function that runs on creation or some bullshit like that
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
+
+        // get location permissions here?
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
 
+    /*
+     * Turn off location services if the app is paused
+     * I have no idea if this works tho
+     */
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        // Stop location updates when Fwip is no longer active
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, (LocationListener) this);
+        }
+    }
 
     /**
      * Manipulates the map once available.
@@ -153,13 +194,29 @@ public class PostingMapActivity extends FragmentActivity implements
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        // this should hopefully get location permissions from the user at runtime
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                mMap.setMyLocationEnabled(true);
+            }
+        }
+        else {
+            buildGoogleApiClient();
+            mMap.setMyLocationEnabled(true);
+        }
+
         // Add a marker in Ann Arbor and move the camera
         mAnnArbor = mMap.addMarker(new MarkerOptions()
                 .position(ANNARBOR)
-                .title("Marker in Ann Arbor")
-                .snippet("Fucc yea"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(ANNARBOR));
-        //can use setTag and getTag to set/get data with
+                .title("Current Location")
+                .snippet("#ohmangoddamn"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ANNARBOR, 17));
+
+        // can use setTag and getTag to set/get data with
+
         /*
         Your app may cater for different types of markers, and you want to treat them
         differently when the user clicks them. To accomplish this, you can store a String
@@ -167,6 +224,7 @@ public class PostingMapActivity extends FragmentActivity implements
 
         OR we could create some sort of class or something that stores all the data.
          */
+
         mAnnArbor.setTag(0);
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
@@ -175,7 +233,19 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap.setOnMapClickListener(this);
     }
 
-    /** Called when the user clicks a marker. */
+    /*
+     * builds the google play api client
+     */
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
+    /* Called when the user clicks a marker. */
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
@@ -184,7 +254,7 @@ public class PostingMapActivity extends FragmentActivity implements
 
         // Check if a click count was set, then display the click count.
         if (clickCount != null) {
-            clickCount = clickCount + 1;
+            clickCount++;
             marker.setTag(clickCount);
             Toast.makeText(this,
                     marker.getTitle() +
@@ -203,9 +273,24 @@ public class PostingMapActivity extends FragmentActivity implements
     {
         Marker newMarker = mMap.addMarker(new MarkerOptions()
                 .position(point)
-                .title("New marker number " + Integer.toString(numMarkers))
+                .title("New marker number " + Integer.toString(numMarkers++))
                 .snippet("muahahha"));
-        return;
+        newMarker.setTag(0);
+        newMarker.setTitle("stab marker");
     }
 
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
 }
