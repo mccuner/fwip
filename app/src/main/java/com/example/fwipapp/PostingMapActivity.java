@@ -3,7 +3,6 @@ package com.example.fwipapp;
 // Libraries
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Date;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,17 +11,14 @@ import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.util.Log;
 import android.Manifest;
 import android.os.Build;
-import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.location.Location;
 import android.content.pm.PackageManager;
