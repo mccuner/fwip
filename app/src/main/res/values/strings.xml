@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">FWIPApp</string>
+    <string name="app_name">Fwip</string>
     <string name="title_activity_posting_map">Fwip</string>
     <string name="title_activity_post__event">Post_Event</string>
 </resources>
