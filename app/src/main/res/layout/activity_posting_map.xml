@@ -1,11 +1,18 @@
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.fwipapp.PostingMapActivity">
+    tools:context=".PostingMapActivity" >
+
+    <fragment xmlns:map="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/map"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:scrollbars="vertical"
+        class="com.google.android.gms.maps.SupportMapFragment"/>
+
     <Button
         android:id="@+id/new_event_button"
         android:layout_width="match_parent"
@@ -14,4 +21,12 @@
         android:text="@string/new_act_button"
         android:background="@color/wallet_holo_blue_light"
         android:textColor="#000000"/>
+
+    <Button
+        android:id="@+id/clearButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:text="Clear"
+        android:onClick="clearMarkers"/>
 </fragment>
