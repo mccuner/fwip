@@ -40,7 +40,8 @@
         <activity
             android:name=".Post_Event"
             android:label="@string/title_activity_post__event"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NewEvent"
+            ></activity>
     </application>
 
 </manifest>

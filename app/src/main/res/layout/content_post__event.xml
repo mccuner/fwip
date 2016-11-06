@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/content_post__event"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,9 +7,8 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.example.fwipapp.Post_Event"
-    tools:showIn="@layout/activity_post__event">
+    android:background="@color/white"
+    >
 
     <!--The Event Name-->
     <TextView
@@ -77,15 +74,23 @@
         />
 
     <Button
+        android:id="@+id/Cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:text="@string/back"
-        android:onClick="toMap"
+        android:text="@string/cancel"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         />
 
-
+    <Button
+        android:id="@+id/Save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|left"
+        android:text="@string/save"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        />
 
 </RelativeLayout>

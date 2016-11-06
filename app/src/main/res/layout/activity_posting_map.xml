@@ -7,9 +7,11 @@
     android:layout_height="match_parent"
     tools:context="com.example.fwipapp.PostingMapActivity">
     <Button
-        android:layout_width="wrap_content"
+        android:id="@+id/new_event_button"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:text="@string/new_act_button"
-        android:onClick="makeNewEvent"/>
+        android:background="@color/wallet_holo_blue_light"
+        android:textColor="#000000"/>
 </fragment>

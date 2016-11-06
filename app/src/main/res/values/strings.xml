@@ -1,9 +1,10 @@
 <resources>
     <string name="app_name">FWIP</string>
     <string name="title_activity_posting_map">FWIP</string>
-    <string name="title_activity_post__event">Post_Event</string>
+    <string name="title_activity_post__event">New Event</string>
     <string name="new_act_button">New Event</string>
-    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
     <string name="name">Event Name:</string>
     <string name="description">Event Description:</string>
     <string name="food_types">Types of food:</string>

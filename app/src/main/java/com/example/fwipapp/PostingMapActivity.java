@@ -5,11 +5,19 @@ import android.os.Bundle;
 import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.util.Log;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 import android.location.Location;
 import android.content.pm.PackageManager;
@@ -62,6 +70,9 @@ public class PostingMapActivity extends FragmentActivity implements
     private int numMarkers;
     LocationRequest mLocationRequest;
     SupportMapFragment mapFrag;
+    private String new_name;
+    private String new_desc;
+    private String new_food;
 
     /*
      * Function used to build the Google Play API client
@@ -76,9 +87,10 @@ public class PostingMapActivity extends FragmentActivity implements
         mGoogleApiClient.connect();
     }
 
-    public final static String EXTRA_MESSAGE = "some message?";
 
-    public enum perm_reqs {MY_PERMISSIONS_REQUEST_FINE_LOCATION, SOMETHING}
+    private PopupWindow new_event_window;
+    private LayoutInflater new_event_inflater;
+    private FrameLayout new_event_layout;
 
     /* This is the custom info window. which I don't wanna see yet. */
 
@@ -173,6 +185,56 @@ public class PostingMapActivity extends FragmentActivity implements
         }
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
+
+        String newString = "some random string";
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if(extras == null) {
+                newString= "nothing, there is no intent/no extras";
+            } else {
+                newString = "data arrived with intent";
+                new_name = extras.getString("name");
+                new_desc = extras.getString("desc");
+                new_food = extras.getString("food");
+
+            }
+        } else {
+            newString= (String) savedInstanceState.getSerializable("STRING_I_NEED");
+        }
+        Log.d("M", newString);
+
+        Button new_event = (Button) findViewById(R.id.new_event_button);
+        new_event_layout = (FrameLayout) findViewById(R.id.map);
+        new_event.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event,null);
+                new_event_window = new PopupWindow(container,1370,925,false);
+                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY,38,1450);
+                new_event_window.setFocusable(true);
+                new_event_window.update();
+
+                Button cancel_button = (Button) container.findViewById(R.id.Cancel);
+                cancel_button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        new_event_window.dismiss();
+                    }
+                });
+                Button save_button = (Button) container.findViewById(R.id.Save);
+                save_button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // get data from forms
+                        // place a marker
+                        // save marker
+                        // do some more mumbo jumbo
+                        new_event_window.dismiss();
+                    }
+                });
+            }
+        });
     }
 
     /*
@@ -246,6 +308,8 @@ public class PostingMapActivity extends FragmentActivity implements
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
+
+
     }
 
     /* Called when the user clicks a marker. */
@@ -345,7 +409,7 @@ public class PostingMapActivity extends FragmentActivity implements
         Intent intent = new Intent(this, Post_Event.class);
 //        EditText editText = (EditText) findViewById(R.id.edit_message);
         String message = "Some message!";
-        intent.putExtra(EXTRA_MESSAGE, message);
+
         startActivity(intent);
     }
 
