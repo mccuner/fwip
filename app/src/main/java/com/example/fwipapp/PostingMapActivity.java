@@ -184,7 +184,7 @@ public class PostingMapActivity extends FragmentActivity implements
         mapFrag.getMapAsync(this);
 
         if(markerList == null) {
-            markerList = new ArrayList<Marker>();
+            markerList = new ArrayList<>();
         }
     }
 
@@ -296,6 +296,7 @@ public class PostingMapActivity extends FragmentActivity implements
         newMarker.setTag(0);
         newMarker.setTitle("stab marker");
         markerList.add(newMarker);
+        savePreferences();
     }
 
     @Override
@@ -376,6 +377,20 @@ public class PostingMapActivity extends FragmentActivity implements
         startActivity(intent);
     }
 
+    public void clearMarkers(View view) {
+        Toast.makeText(this, "Clearing Markers", Toast.LENGTH_SHORT).show();
+        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        int size = mSharedPreferences.getInt("listSize", 0);
+        for(int i = 0; i < size; ++i) {
+            Marker victim = markerList.get(i);
+            victim.remove();
+        }
+        markerList.clear();
+        editor.clear();
+        editor.apply();
+    }
+
     /*
      * Enables location if allowed by the user's permissions
      */
@@ -413,9 +428,9 @@ public class PostingMapActivity extends FragmentActivity implements
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         editor.putInt("listSize", markerList.size());
-        for(int i = 0; i < markerList.size(); ++i) {
-            editor.putFloat("Lat" + i, (float)markerList.get(i).getPosition().latitude);
-            editor.putFloat("Lng" + i, (float)markerList.get(i).getPosition().longitude);
+        for (int i = 0; i < markerList.size(); ++i) {
+            editor.putFloat("Lat" + i, (float) markerList.get(i).getPosition().latitude);
+            editor.putFloat("Lng" + i, (float) markerList.get(i).getPosition().longitude);
             editor.putString("Title" + i, markerList.get(i).getTitle());
         }
         editor.apply();
@@ -428,8 +443,8 @@ public class PostingMapActivity extends FragmentActivity implements
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         int size = mSharedPreferences.getInt("listSize", 0);
         for(int i = 0; i < size; ++i) {
-            double lat = (double)mSharedPreferences.getFloat("Lat" + i, 0);
-            double lng = (double)mSharedPreferences.getFloat("Lng" + i, 0);
+            double lat = (double) mSharedPreferences.getFloat("Lat" + i, 0);
+            double lng = (double) mSharedPreferences.getFloat("Lng" + i, 0);
             String title = mSharedPreferences.getString("Title" + i, "NULL");
             markerList.add(mMap.addMarker(new MarkerOptions().position(
                     new LatLng(lat, lng)).title(title)));
