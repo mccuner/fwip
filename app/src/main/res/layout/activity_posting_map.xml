@@ -5,4 +5,11 @@
     android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.fwipapp.PostingMapActivity" />
+    tools:context="com.example.fwipapp.PostingMapActivity">
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:text="@string/new_act_button"
+        android:onClick="makeNewEvent"/>
+</fragment>
