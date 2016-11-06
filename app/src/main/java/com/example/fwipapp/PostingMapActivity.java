@@ -49,7 +49,9 @@ public class PostingMapActivity extends FragmentActivity implements
         OnConnectionFailedListener,
         LocationListener {
 
-    // Private variables, used in the functions defined below
+    /*
+     * Private variables, used in the functions defined below
+     */
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
     public String lastLat, lastLong;
@@ -172,11 +174,9 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("M", "ONCREATE");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
-
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
         }
-
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
     }
@@ -215,8 +215,6 @@ public class PostingMapActivity extends FragmentActivity implements
             onLocationChanged(mLastLocation);
         }
     }
-
-
 
     /**
      * Manipulates the map once available.
@@ -298,7 +296,7 @@ public class PostingMapActivity extends FragmentActivity implements
             mCurrLocationMarker.remove();
         }
 
-        //Place current location marker
+        // Place current location marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
@@ -306,11 +304,11 @@ public class PostingMapActivity extends FragmentActivity implements
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         mCurrLocationMarker = mMap.addMarker(markerOptions);
 
-        //move map camera
+        // Move camera
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
 
-        //stop location updates
+        // Stop updates
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
@@ -322,8 +320,6 @@ public class PostingMapActivity extends FragmentActivity implements
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
 
@@ -337,10 +333,8 @@ public class PostingMapActivity extends FragmentActivity implements
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
-
-
-            } else {
-                // No explanation needed, we can request the permission.
+            }
+            else {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
@@ -359,12 +353,8 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("M", "ONREQUESTPERMISSIONRESULT");
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // location-related task you need to do.
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
@@ -375,11 +365,9 @@ public class PostingMapActivity extends FragmentActivity implements
                         mMap.setMyLocationEnabled(true);
                     }
 
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                    Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    Toast.makeText(this, "PERMISSION DENIED", Toast.LENGTH_LONG).show();
                 }
             }
         }
