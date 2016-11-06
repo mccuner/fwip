@@ -218,7 +218,7 @@ public class PostingMapActivity extends FragmentActivity implements
             @Override
             public void onClick(View v){
                 new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
-                ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event,null);
+                ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event, null);
                 new_event_window = new PopupWindow(container,1370,925,false);
                 new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY,38,1450);
                 new_event_window.setFocusable(true);
