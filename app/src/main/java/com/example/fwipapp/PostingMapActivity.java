@@ -1,30 +1,34 @@
 package com.example.fwipapp;
 
-import android.graphics.Color;
-import android.os.Handler;
-import android.os.SystemClock;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
-import android.view.animation.BounceInterpolator;
-import android.view.animation.Interpolator;
-import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.UiSettings;
+import android.location.Location;
+
+//copy/pasted imports
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+
 
 /*
     TODO: Be able to view info about markers
@@ -38,7 +42,8 @@ import com.google.android.gms.maps.UiSettings;
 public class PostingMapActivity extends FragmentActivity implements
         OnMapReadyCallback,
         OnMarkerClickListener,
-        OnMapClickListener {
+        OnMapClickListener,
+        LocationListener{
 
     // Private variables, used in the functions defined below
     private GoogleMap mMap;
@@ -48,6 +53,19 @@ public class PostingMapActivity extends FragmentActivity implements
     private Marker mAnnArbor;
 
     private static final LatLng ANNARBOR = new LatLng(42.2808, -83.7430);
+
+    public final static String EXTRA_MESSAGE = "some message?";
+
+    @Override
+    public void onLocationChanged(Location location) {
+        LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
+        mMap.addMarker(new MarkerOptions().position(loc));
+        if(mMap != null){
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16.0f));
+        }
+    }
+
+    public enum perm_reqs {MY_PERMISSIONS_REQUEST_FINE_LOCATION, SOMETHING}
 
     /* This is the custom info window. which I don't wanna see yet. */
 
@@ -137,8 +155,56 @@ public class PostingMapActivity extends FragmentActivity implements
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        1);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == 1) {
+            if (permissions.length == 1 &&
+                    permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                mMap.setMyLocationEnabled(true);
+            } else {
+                // Permission was denied. Display an error message.
+                Toast.makeText(this, "FUCK YOU AND YOUR PERMISSIONS", Toast.LENGTH_SHORT);
+            }
+        }
+    }
 
     /**
      * Manipulates the map once available.
@@ -169,6 +235,15 @@ public class PostingMapActivity extends FragmentActivity implements
          */
         mAnnArbor.setTag(0);
         mMap.getUiSettings().setMapToolbarEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        //Location things
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
+                        PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "FUCK YOU AND YOUR LOCATION", Toast.LENGTH_SHORT);
+        }
+        else mMap.setMyLocationEnabled(true);
 
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
@@ -201,11 +276,18 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMapClick(LatLng point)
     {
-        Marker newMarker = mMap.addMarker(new MarkerOptions()
+        mMap.addMarker(new MarkerOptions()
                 .position(point)
                 .title("New marker number " + Integer.toString(numMarkers))
                 .snippet("muahahha"));
         return;
     }
-
+    public void makeNewEvent(View view)
+    {
+        Intent intent = new Intent(this, Post_Event.class);
+//        EditText editText = (EditText) findViewById(R.id.edit_message);
+        String message = "Some message!";
+        intent.putExtra(EXTRA_MESSAGE, message);
+        startActivity(intent);
+    }
 }

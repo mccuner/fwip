@@ -13,4 +13,79 @@
     tools:context="com.example.fwipapp.Post_Event"
     tools:showIn="@layout/activity_post__event">
 
+    <!--The Event Name-->
+    <TextView
+        android:id="@+id/EventName"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/name"
+        android:textColor="#000000"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:id="@+id/InputName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="text"
+        android:layout_below="@id/EventName"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        />
+
+    <!--Event Description-->
+    <TextView
+        android:id="@+id/EventDescription"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/description"
+        android:textColor="#000000"
+        android:layout_below="@id/InputName"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:id="@+id/InputDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="text"
+        android:layout_below="@id/EventDescription"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        />
+
+    <!--Types of Food at event -->
+    <TextView
+        android:id="@+id/FoodTypes"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/food_types"
+        android:textColor="#000000"
+        android:layout_below="@id/InputDescription"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:id="@+id/InputFood"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="text"
+        android:layout_below="@id/FoodTypes"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:text="@string/back"
+        android:onClick="toMap"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        />
+
+
+
 </RelativeLayout>
