@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/FWIPApp.iml" filepath="$PROJECT_DIR$/FWIPApp.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/fwip.iml" filepath="$PROJECT_DIR$/fwip.iml" />
     </modules>
   </component>
 </project>

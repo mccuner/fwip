@@ -1,10 +1,22 @@
 package com.example.fwipapp;
 
+
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
+// Android Libraries
+import android.util.Log;
+import android.Manifest;
+import android.os.Build;
+import android.os.Bundle;
 import android.widget.Toast;
+import android.location.Location;
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
 
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -13,9 +25,19 @@ import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+
+// Google Libraries
+import com.google.android.gms.maps.GoogleMap;
+
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.MarkerOptions;
+
 import android.location.Location;
 
 //copy/pasted imports
@@ -29,6 +51,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
+import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
+import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 
 /*
     TODO: Be able to view info about markers
@@ -43,27 +73,34 @@ public class PostingMapActivity extends FragmentActivity implements
         OnMapReadyCallback,
         OnMarkerClickListener,
         OnMapClickListener,
-        LocationListener{
+        ConnectionCallbacks,
+        OnConnectionFailedListener,
+        LocationListener {
 
     // Private variables, used in the functions defined below
     private GoogleMap mMap;
-
+    public GoogleApiClient mGoogleApiClient;
+    public String lastLat, lastLong;
+    Location mLastLocation;
+    Marker mCurrLocationMarker;
     private int numMarkers;
+    LocationRequest mLocationRequest;
+    SupportMapFragment mapFrag;
 
-    private Marker mAnnArbor;
-
-    private static final LatLng ANNARBOR = new LatLng(42.2808, -83.7430);
+    /*
+     * Function used to build the Google Play API client
+     */
+    protected synchronized void buildGoogleApiClient() {
+        Log.d("M", "BUILDGOOGLEAPICLIENT");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
 
     public final static String EXTRA_MESSAGE = "some message?";
-
-    @Override
-    public void onLocationChanged(Location location) {
-        LatLng loc = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.addMarker(new MarkerOptions().position(loc));
-        if(mMap != null){
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16.0f));
-        }
-    }
 
     public enum perm_reqs {MY_PERMISSIONS_REQUEST_FINE_LOCATION, SOMETHING}
 
@@ -147,62 +184,67 @@ public class PostingMapActivity extends FragmentActivity implements
 //        }
 //    }
 
+//    protected void createLocationRequest() {
+//        LocationRequest mLocationRequest = new LocationRequest();
+//        mLocationRequest.setInterval(10000);
+//        mLocationRequest.setFastestInterval(5000);
+//        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+//        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+//                .addLocationRequest(mLocationRequest);
+//        PendingResult<LocationSettingsResult> result =
+//                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
+//                        builder.build());
+//    }
+
+    /*
+     * Runs on when Fwip is started
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d("M", "ONCREATE");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
 
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkLocationPermission();
+        }
 
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+        mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFrag.getMapAsync(this);
+    }
 
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
+    /*
+     * Runs when Fwip is moved to the background
+     */
+    @Override
+    public void onPause() {
+        Log.d("M", "ONPAUSE");
+        super.onPause();
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
     }
 
+    /*
+     * Runs on when Fwip is connected
+     */
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 1) {
-            if (permissions.length == 1 &&
-                    permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
-                    return;
-                }
-                mMap.setMyLocationEnabled(true);
-            } else {
-                // Permission was denied. Display an error message.
-                Toast.makeText(this, "FUCK YOU AND YOUR PERMISSIONS", Toast.LENGTH_SHORT);
-            }
+    public void onConnected(Bundle bundle) {
+        Log.d("M", "ONCONNECTED");
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.d("M", "REQUESTINGLOCATION");
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        }
+        if (mLastLocation != null) {
+            Log.d("M", "INITIALIZINGLOCATION");
+            onLocationChanged(mLastLocation);
         }
     }
 
@@ -217,23 +259,24 @@ public class PostingMapActivity extends FragmentActivity implements
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.d("M", "ONMAPREADY");
         mMap = googleMap;
 
-        // Add a marker in Ann Arbor and move the camera
-        mAnnArbor = mMap.addMarker(new MarkerOptions()
-                .position(ANNARBOR)
-                .title("Marker in Ann Arbor")
-                .snippet("Fucc yea"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(ANNARBOR));
-        //can use setTag and getTag to set/get data with
-        /*
-        Your app may cater for different types of markers, and you want to treat them
-        differently when the user clicks them. To accomplish this, you can store a String
-        with the marker indicating the type.
+        //Initialize Google Play Services
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                Log.d("M", "SETLOCATIONTRUE");
+                mMap.setMyLocationEnabled(true);
+            }
+        }
+        else {
+            buildGoogleApiClient();
+            Log.d("M", "SETLOCATIONTRUE");
+            mMap.setMyLocationEnabled(true);
+        }
 
-        OR we could create some sort of class or something that stores all the data.
-         */
-        mAnnArbor.setTag(0);
         mMap.getUiSettings().setMapToolbarEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
         //Location things
@@ -250,44 +293,141 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap.setOnMapClickListener(this);
     }
 
-    /** Called when the user clicks a marker. */
+    /* Called when the user clicks a marker. */
     @Override
     public boolean onMarkerClick(final Marker marker) {
-
+        Log.d("M", "ONMARKERCLICK");
         // Retrieve the data from the marker.
         Integer clickCount = (Integer) marker.getTag();
 
         // Check if a click count was set, then display the click count.
         if (clickCount != null) {
-            clickCount = clickCount + 1;
+            clickCount++;
             marker.setTag(clickCount);
             Toast.makeText(this,
-                    marker.getTitle() +
-                            " has been clicked " + clickCount + " times.",
+                    marker.getTitle() + " has been clicked " + clickCount + " times.",
                     Toast.LENGTH_SHORT).show();
         }
-
-        // Return false to indicate that we have not consumed the event and that we wish
-        // for the default behavior to occur (which is for the camera to move such that the
-        // marker is centered and for the marker's info window to open, if it has one).
         return false;
     }
 
     @Override
-    public void onMapClick(LatLng point)
-    {
-        mMap.addMarker(new MarkerOptions()
+    public void onMapClick(LatLng point) {
+        Log.d("M", "ONMAPCLICK");
+        Marker newMarker = mMap.addMarker(new MarkerOptions()
                 .position(point)
-                .title("New marker number " + Integer.toString(numMarkers))
+                .title("New marker number " + Integer.toString(numMarkers++))
                 .snippet("muahahha"));
-        return;
+        newMarker.setTag(0);
+        newMarker.setTitle("stab marker");
     }
-    public void makeNewEvent(View view)
-    {
+
+    @Override
+    public void onConnectionSuspended(int i) {}
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {}
+
+    public void onLocationChanged(Location location) {
+        Log.d("M", "ONLOCATIONCHANGED");
+        mLastLocation = location;
+        Log.d("LAT", String.valueOf(mLastLocation.getLatitude()));
+        Log.d("LONG", String.valueOf(mLastLocation.getLongitude()));
+        if (mCurrLocationMarker != null) {
+            mCurrLocationMarker.remove();
+        }
+
+        //Place current location marker
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng);
+        markerOptions.title("Current Position");
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+        mCurrLocationMarker = mMap.addMarker(markerOptions);
+
+        //move map camera
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+
+        //stop location updates
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    public boolean checkLocationPermission() {
+        Log.d("M", "CHECKLOCATIONPERMISSION");
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                //TODO:
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+                //Prompt the user once explanation has been shown
+                //(just doing it here for now, note that with this code, no explanation is shown)
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            Log.d("M", "PERMISSIONGRANTED");
+            return true;
+        }
+    }
+    public void makeNewEvent(View view) {
         Intent intent = new Intent(this, Post_Event.class);
 //        EditText editText = (EditText) findViewById(R.id.edit_message);
         String message = "Some message!";
         intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        Log.d("M", "ONREQUESTPERMISSIONRESULT");
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+
+                        if (mGoogleApiClient == null) {
+                            buildGoogleApiClient();
+                        }
+                        mMap.setMyLocationEnabled(true);
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
+                }
+            }
+        }
     }
 }
