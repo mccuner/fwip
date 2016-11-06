@@ -1,6 +1,11 @@
 package com.example.fwipapp;
 
 // Libraries
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Date;
+
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
@@ -9,7 +14,6 @@ import android.view.View;
 import android.util.Log;
 import android.Manifest;
 import android.os.Build;
-import android.os.Bundle;
 import android.widget.Toast;
 import android.location.Location;
 import android.content.pm.PackageManager;
@@ -56,18 +60,21 @@ public class PostingMapActivity extends FragmentActivity implements
      */
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
-    public String lastLat, lastLong;
     Location mLastLocation;
     Marker mCurrLocationMarker;
     private int numMarkers;
     LocationRequest mLocationRequest;
     SupportMapFragment mapFrag;
+    SharedPreferences mSharedPrefs = null;
+    private List<Marker> markerList;
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     /*
      * Function used to build the Google Play API client
      */
     protected synchronized void buildGoogleApiClient() {
-        Log.d("M", "BUILDGOOGLEAPICLIENT");
+        Log.d("M", "BUILD GOOGLE API CLIENT");
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -168,11 +175,17 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("M", "ON CREATE");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
+
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
         }
+
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
+
+        if(markerList == null) {
+            markerList = new ArrayList<Marker>();
+        }
     }
 
     /*
@@ -181,6 +194,7 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onPause() {
         Log.d("M", "ON PAUSE");
+        savePreferences();
         super.onPause();
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -246,9 +260,13 @@ public class PostingMapActivity extends FragmentActivity implements
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
+
+        loadPreferences();
     }
 
-    /* Called when the user clicks a marker. */
+    /*
+     * Called when the user clicks a marker
+     */
     @Override
     public boolean onMarkerClick(final Marker marker) {
         Log.d("M", "ON MARKER CLICK");
@@ -265,6 +283,9 @@ public class PostingMapActivity extends FragmentActivity implements
         return false;
     }
 
+    /*
+     * Called when the user clicks the map
+     */
     @Override
     public void onMapClick(LatLng point) {
         Log.d("M", "ON MAP CLICK");
@@ -274,6 +295,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 .snippet("muahahha"));
         newMarker.setTag(0);
         newMarker.setTitle("stab marker");
+        markerList.add(newMarker);
     }
 
     @Override
@@ -282,6 +304,9 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {}
 
+    /*
+     * Called when the user's location changes
+     */
     public void onLocationChanged(Location location) {
         Log.d("M", "ON LOCATION CHANGED");
         mLastLocation = location;
@@ -310,7 +335,9 @@ public class PostingMapActivity extends FragmentActivity implements
         }
     }
 
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    /*
+     * Checks the user's location permissions
+     */
     public boolean checkLocationPermission() {
         Log.d("M", "CHECK LOCATION PERMISSION");
         if (ContextCompat.checkSelfPermission(this,
@@ -349,6 +376,9 @@ public class PostingMapActivity extends FragmentActivity implements
         startActivity(intent);
     }
 
+    /*
+     * Enables location if allowed by the user's permissions
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String permissions[],
@@ -373,6 +403,36 @@ public class PostingMapActivity extends FragmentActivity implements
                     Toast.makeText(this, "PERMISSION DENIED", Toast.LENGTH_LONG).show();
                 }
             }
+        }
+    }
+
+    /*
+     * Saves all map markers
+     */
+    private void savePreferences() {
+        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+        editor.putInt("listSize", markerList.size());
+        for(int i = 0; i < markerList.size(); ++i) {
+            editor.putFloat("Lat" + i, (float)markerList.get(i).getPosition().latitude);
+            editor.putFloat("Lng" + i, (float)markerList.get(i).getPosition().longitude);
+            editor.putString("Title" + i, markerList.get(i).getTitle());
+        }
+        editor.apply();
+    }
+
+    /*
+     * Loads all map markers
+     */
+    private void loadPreferences() {
+        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
+        int size = mSharedPreferences.getInt("listSize", 0);
+        for(int i = 0; i < size; ++i) {
+            double lat = (double)mSharedPreferences.getFloat("Lat" + i, 0);
+            double lng = (double)mSharedPreferences.getFloat("Lng" + i, 0);
+            String title = mSharedPreferences.getString("Title" + i, "NULL");
+            markerList.add(mMap.addMarker(new MarkerOptions().position(
+                    new LatLng(lat, lng)).title(title)));
         }
     }
 }
