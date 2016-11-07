@@ -198,31 +198,22 @@ public class PostingMapActivity extends FragmentActivity implements
     private FrameLayout help_layout;
 
     /* This is the custom info window. which I don't wanna see yet. */
-    // TODO: might not need this
+    // TODO: might not need this or idk
     @Override
-    public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(this, "Info window clicked",
-                Toast.LENGTH_SHORT).show();
-    }
-
+    public void onInfoWindowClick(Marker marker) {}
 
     /*
      * Custom Info Window Class
      */
     class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         private final View mWindow;
-//        private View mBackgroud;
 
         CustomInfoWindowAdapter() {
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_window, null);
-//            mBackgroud = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
         }
 
         @Override
         public View getInfoWindow(Marker marker) {
-//            Log.d("M", "GET INFO WINDOW");
-//            render(marker, mBackgroud);
-//            return mBackgroud;
             return null;
         }
 
@@ -260,12 +251,13 @@ public class PostingMapActivity extends FragmentActivity implements
                 descUi.setText("");
             }
             TextView foodUi = ((TextView) view.findViewById(R.id.foodtypes));
-            if(parts[1] != null) {
-                SpannableString snippetText = new SpannableString(parts[1]);
-                foodUi.setText(snippetText);
-            }
-            else {
-                foodUi.setText("");
+            if(parts.length > 1) {
+                if (parts[1] != null) {
+                    SpannableString snippetText = new SpannableString(parts[1]);
+                    foodUi.setText(snippetText);
+                } else {
+                    foodUi.setText("");
+                }
             }
         }
     }
@@ -356,9 +348,6 @@ public class PostingMapActivity extends FragmentActivity implements
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
                 }
 
-                // this is too much work for rn
-//                foodMarker.showInfoWindow();
-
                 Button cancel_button = (Button) container.findViewById(R.id.Cancel);
                 cancel_button.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -392,19 +381,6 @@ public class PostingMapActivity extends FragmentActivity implements
                         final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
                         finalize_button.setVisibility(View.VISIBLE);
                         cancel_event_button.setVisibility(View.VISIBLE);
-
-//                        if(checkLocationPermission()) {
-//                            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-//                            if (foodLocation != null) {
-//                                Log.d("M", "INITIALIZING LOCATION");
-//                                foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
-//                                        .title("Current Event")
-//                                        .snippet("Drag Me!")
-//                                        .draggable(true)
-//                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
-//                            }
-//                        }
-//                        foodMarker.setPosition(new LatLng(foodLocation.getLatitude(), foodLocation.getLongitude()));
                     }
                 });
             }

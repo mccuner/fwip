@@ -8,12 +8,9 @@
     android:background="@color/white">
 
     <TextView
-        android:text="HELP MENUUUUU\n\n\nClick anywhere to close."
+        android:text="Welcome to Fwip!\n\nClick on markers to find out about food near you, or click the New Event button to tell others about your food!\n\nClick anywhere to close."
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:id="@+id/helpText" />
-
-
-
 </LinearLayout>
