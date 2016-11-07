@@ -302,7 +302,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_event_window.setFocusable(true);
 //                new_event_window.setTouchInterceptor(customPopUpTouchListenr)
                 new_event_window.update();
-                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 90);
+                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 100);
 
                 // make new, draggable marker
                 if(checkLocationPermission()) {
@@ -339,7 +339,10 @@ public class PostingMapActivity extends FragmentActivity implements
                         new_event_data.setFood(new_food);
 
                         new_event_window.dismiss();
+                        final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
                         finalize_button.setVisibility(View.VISIBLE);
+                        cancel_event_button.setVisibility(View.VISIBLE);
+
 //                        if(checkLocationPermission()) {
 //                            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 //                            if (foodLocation != null) {
@@ -357,6 +360,7 @@ public class PostingMapActivity extends FragmentActivity implements
             }
         });
         final Button finalize_button = (Button) findViewById(R.id.save_event_button);
+        final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
         finalize_button.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
@@ -372,6 +376,17 @@ public class PostingMapActivity extends FragmentActivity implements
                 // remove purple marker
                 foodMarker.remove();
                 finalize_button.setVisibility(View.GONE);
+                new_event.setVisibility(View.VISIBLE);
+                cancel_event_button.setVisibility(View.GONE);
+            }
+        });
+        cancel_event_button.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // remove purple marker
+                foodMarker.remove();
+                finalize_button.setVisibility(View.GONE);
+                cancel_event_button.setVisibility(View.GONE);
                 new_event.setVisibility(View.VISIBLE);
             }
         });
