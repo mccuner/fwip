@@ -201,8 +201,8 @@ public class PostingMapActivity extends FragmentActivity implements
     // TODO: might not need this
     @Override
     public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(this, "Info window clicked",
-                Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Info window clicked",
+//                Toast.LENGTH_SHORT).show();
     }
 
 
