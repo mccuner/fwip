@@ -1,6 +1,7 @@
 package com.example.fwipapp;
 
 // Libraries
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -91,37 +92,46 @@ public class PostingMapActivity extends FragmentActivity implements
         private String Food;
 
         //constructor
-        public EventData(String name, String description, String food){
+        public EventData(){
+            return;
+        }
+
+        public EventData(String name, String description, String food) {
             this.Name = name;
             this.Description = description;
             this.Food = food;
         }
 
         //getters
-        public String getName(){
+        public String getName() {
             return Name;
         }
-        public String getDesc(){
+
+        public String getDesc() {
             return Description;
         }
-        public String getFood(){
+
+        public String getFood() {
             return Food;
         }
 
         //setters
-        public void setName(String new_name){
+        public void setName(String new_name) {
             this.Name = new_name;
             return;
         }
-        public void setDesc(String new_desc){
+
+        public void setDesc(String new_desc) {
             this.Description = new_desc;
             return;
         }
-        public void setFood(String new_food){
+
+        public void setFood(String new_food) {
             this.Food = new_food;
             return;
         }
     }
+
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
     Location foodLocation;  // This is the last known location of the food marker
@@ -132,6 +142,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_name;
     private String new_desc;
     private String new_food;
+    private EventData new_event_data = new EventData();
     private Map<Marker, EventData> allMarkersMap = new HashMap<Marker, EventData>();
 
     private PopupWindow new_event_window;
@@ -247,51 +258,62 @@ public class PostingMapActivity extends FragmentActivity implements
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
 
-        if(markerList == null) {
+        if (markerList == null) {
             markerList = new ArrayList<>();
         }
 
         String newString = "some random string";
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
-            if(extras == null) {
-                newString= "nothing, there is no intent/no extras";
-            }
-            else {
+            if (extras == null) {
+                newString = "nothing, there is no intent/no extras";
+            } else {
                 newString = "data arrived with intent";
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
 
             }
-        }
-        else {
-            newString= (String) savedInstanceState.getSerializable("STRING_I_NEED");
+        } else {
+            newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
         }
         Log.d("M", newString);
 
-        Button new_event = (Button) findViewById(R.id.new_event_button);
+        final Button new_event = (Button) findViewById(R.id.new_event_button);
         new_event_layout = (FrameLayout) findViewById(R.id.map);
         new_event.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
+                new_event.setVisibility(View.GONE);
+                final Button finalize_button = (Button) findViewById(R.id.save_event_button);
+//                finalize_button.setVisibility(View.VISIBLE);
                 new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
-                final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event,null);
+                final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event, null);
                 DisplayMetrics dm = new DisplayMetrics();
                 getWindowManager().getDefaultDisplay().getMetrics(dm);
 
                 int width = dm.widthPixels;
                 int height = dm.heightPixels;
 
-                new_event_window = new PopupWindow(container,(int)(width*0.96),(int)(height*0.39),false);
+                new_event_window = new PopupWindow(container, (int) (width * 0.96), (int) (height * 0.95), false);
                 // Do more to position the window better!!!!!
-                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY,33,1450);
+                new_event_window.setTouchable(true);
+                new_event_window.setOutsideTouchable(false);
                 new_event_window.setFocusable(true);
+//                new_event_window.setTouchInterceptor(customPopUpTouchListenr)
                 new_event_window.update();
+                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 90);
 
                 // make new, draggable marker
-                LatLng currentloc = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                final Marker new_event_marker = mMap.addMarker(new MarkerOptions().position(currentloc).draggable(true));
+                if(checkLocationPermission()) {
+                    Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
+                            .title("Current Event")
+                            .snippet("Drag Me!")
+                            .draggable(true)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
+                }
 
                 Button cancel_button = (Button) container.findViewById(R.id.Cancel);
                 cancel_button.setOnClickListener(new View.OnClickListener() {
@@ -300,7 +322,7 @@ public class PostingMapActivity extends FragmentActivity implements
                         new_event_window.dismiss();
                     }
                 });
-                Button save_button = (Button) container.findViewById(R.id.Save);
+                Button save_button = (Button) container.findViewById(R.id.SaveData);
                 save_button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -311,16 +333,46 @@ public class PostingMapActivity extends FragmentActivity implements
                         new_desc = desc_el.getText().toString();
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
                         new_food = food_el.getText().toString();
-                        // place a marker...some of matt's code/idea
-                        new_event_marker.setDraggable(false);
-                        // save marker
-                        // no need to save, it's done on close
-                        // save data associated with marker
-                        EventData new_event_data = new EventData(new_name, new_desc, new_food);
-                        allMarkersMap.put(new_event_marker, new_event_data);
+
+                        new_event_data.setName(new_name);
+                        new_event_data.setDesc(new_desc);
+                        new_event_data.setFood(new_food);
+
                         new_event_window.dismiss();
+                        finalize_button.setVisibility(View.VISIBLE);
+//                        if(checkLocationPermission()) {
+//                            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+//                            if (foodLocation != null) {
+//                                Log.d("M", "INITIALIZING LOCATION");
+//                                foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
+//                                        .title("Current Event")
+//                                        .snippet("Drag Me!")
+//                                        .draggable(true)
+//                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
+//                            }
+//                        }
+//                        foodMarker.setPosition(new LatLng(foodLocation.getLatitude(), foodLocation.getLongitude()));
                     }
                 });
+            }
+        });
+        final Button finalize_button = (Button) findViewById(R.id.save_event_button);
+        finalize_button.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // move purple marker (done by user)
+                // click finalize
+                // create new marker
+                LatLng location = foodMarker.getPosition();
+                Marker new_event_marker = mMap.addMarker(new MarkerOptions().position(location));
+
+                // save location and data with marker
+                allMarkersMap.put(new_event_marker, new_event_data);
+
+                // remove purple marker
+                foodMarker.remove();
+                finalize_button.setVisibility(View.GONE);
+                new_event.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -358,11 +410,11 @@ public class PostingMapActivity extends FragmentActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                     mLocationRequest,
                     this);
-            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+//            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         }
         if (foodLocation != null) {
             Log.d("M", "INITIALIZING LOCATION");
-            onLocationChanged(foodLocation);
+//            onLocationChanged(foodLocation);
         }
     }
 
@@ -477,31 +529,24 @@ public class PostingMapActivity extends FragmentActivity implements
     public void onLocationChanged(Location location) {
         Log.d("M", "ON LOCATION CHANGED");
 //        this.location = location;
-        foodLocation = location;
-        Log.d("LAT", String.valueOf(foodLocation.getLatitude()));
-        Log.d("LNG", String.valueOf(foodLocation.getLongitude()));
-        if (foodMarker != null) {
-            foodMarker.remove();
-        }
+//        foodLocation = location;
+        Log.d("LAT", String.valueOf(location.getLatitude()));
+        Log.d("LNG", String.valueOf(location.getLongitude()));
+//        if (foodMarker != null) {
+//            foodMarker.remove();
+//        }
 
         // Place current event marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
-                .title("Current Event")
-                .snippet("Drag Me!")
-                .draggable(true)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
-
-        // TODO: i need the latitude and longitude of this marker at any time
 
         // Move camera
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(19));
 
         // Stop updates
-        if (mGoogleApiClient != null) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        }
+//        if (mGoogleApiClient != null) {
+//            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+//        }
     }
 
     /*

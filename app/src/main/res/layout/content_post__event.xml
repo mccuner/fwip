@@ -77,18 +77,18 @@
         android:id="@+id/Cancel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom|left"
         android:text="@string/cancel"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
         />
 
     <Button
-        android:id="@+id/Save"
+        android:id="@+id/SaveData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|left"
-        android:text="@string/save"
+        android:layout_gravity="bottom|end"
+        android:text="@string/choose_next"
         android:layout_alignParentLeft="true"
         android:layout_alignParentBottom="true"
         />
