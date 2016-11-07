@@ -2,26 +2,28 @@ package com.example.fwipapp;
 
 // Libraries
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.sql.Time;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.content.Intent;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.util.Pair;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -33,6 +35,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 import android.location.Location;
@@ -40,7 +43,6 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 
-import com.google.android.gms.games.event.Event;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -90,9 +92,16 @@ public class PostingMapActivity extends FragmentActivity implements
         private String Name;
         private String Description;
         private String Food;
+        private Date Created;
+        private Date Last_Updated;
+        private Calendar Clear_Time;
 
         //constructor
         public EventData(){
+            this.Clear_Time = Calendar.getInstance();
+            this.Clear_Time.setTime(new Date());
+            this.Created = Clear_Time.getTime(); //now
+            this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
             return;
         }
 
@@ -100,6 +109,10 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Name = name;
             this.Description = description;
             this.Food = food;
+            this.Clear_Time = Calendar.getInstance();
+            this.Clear_Time.setTime(new Date());
+            this.Created = Clear_Time.getTime(); //now
+            this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
         }
 
         //getters
@@ -115,20 +128,40 @@ public class PostingMapActivity extends FragmentActivity implements
             return Food;
         }
 
+        public Date getCreated(){ return Created; }
+
+        public Date getLast_Updated(){ return Last_Updated; }
+
+        public Date getClear_Time(){ return Clear_Time.getTime(); }
+
         //setters
         public void setName(String new_name) {
             this.Name = new_name;
-            return;
         }
 
         public void setDesc(String new_desc) {
             this.Description = new_desc;
-            return;
         }
 
         public void setFood(String new_food) {
             this.Food = new_food;
-            return;
+        }
+
+        public void setDates(Date time){
+            this.Created = this.Last_Updated = time;
+            this.Clear_Time.setTime(time);
+            addTime();
+        }
+
+        public void setLast_Updated(Date time){ this.Last_Updated = time; }
+
+        public void addTime(){
+            // will change with time - lol puns
+            this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1);
+        }
+
+        public void subTime() {
+            this.Clear_Time.add(Calendar.HOUR_OF_DAY, -1);
         }
     }
 
@@ -148,6 +181,11 @@ public class PostingMapActivity extends FragmentActivity implements
     private PopupWindow new_event_window;
     private LayoutInflater new_event_inflater;
     private FrameLayout new_event_layout;
+
+    private Button help_button;
+    private PopupWindow help_window;
+    private LayoutInflater help_inflater;
+    private FrameLayout help_layout;
 
     /* This is the custom info window. which I don't wanna see yet. */
 
@@ -279,12 +317,12 @@ public class PostingMapActivity extends FragmentActivity implements
         }
         Log.d("M", newString);
 
-        final Button new_event = (Button) findViewById(R.id.new_event_button);
+        final Button new_event_button = (Button) findViewById(R.id.new_event_button);
         new_event_layout = (FrameLayout) findViewById(R.id.map);
-        new_event.setOnClickListener(new View.OnClickListener() {
+        new_event_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new_event.setVisibility(View.GONE);
+                new_event_button.setVisibility(View.GONE);
                 final Button finalize_button = (Button) findViewById(R.id.save_event_button);
 //                finalize_button.setVisibility(View.VISIBLE);
                 new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -319,7 +357,9 @@ public class PostingMapActivity extends FragmentActivity implements
                 cancel_button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        foodMarker.remove();
                         new_event_window.dismiss();
+                        new_event_button.setVisibility(View.VISIBLE);
                     }
                 });
                 Button save_button = (Button) container.findViewById(R.id.SaveData);
@@ -334,9 +374,13 @@ public class PostingMapActivity extends FragmentActivity implements
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
                         new_food = food_el.getText().toString();
 
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                        Date now = new Date();
+
                         new_event_data.setName(new_name);
                         new_event_data.setDesc(new_desc);
                         new_event_data.setFood(new_food);
+                        new_event_data.setDates(new Date()); // sets created time to now, last_upt to now, clear_time to an hour from now
 
                         new_event_window.dismiss();
                         final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
@@ -376,7 +420,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 // remove purple marker
                 foodMarker.remove();
                 finalize_button.setVisibility(View.GONE);
-                new_event.setVisibility(View.VISIBLE);
+                new_event_button.setVisibility(View.VISIBLE);
                 cancel_event_button.setVisibility(View.GONE);
             }
         });
@@ -387,7 +431,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 foodMarker.remove();
                 finalize_button.setVisibility(View.GONE);
                 cancel_event_button.setVisibility(View.GONE);
-                new_event.setVisibility(View.VISIBLE);
+                new_event_button.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -427,10 +471,10 @@ public class PostingMapActivity extends FragmentActivity implements
                     this);
 //            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         }
-        if (foodLocation != null) {
-            Log.d("M", "INITIALIZING LOCATION");
-//            onLocationChanged(foodLocation);
-        }
+//        if (foodLocation != null) {
+//            Log.d("M", "INITIALIZING LOCATION");
+////            onLocationChanged(foodLocation);
+//        }
     }
 
     /**
@@ -562,6 +606,35 @@ public class PostingMapActivity extends FragmentActivity implements
 //        if (mGoogleApiClient != null) {
 //            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
 //        }
+    }
+
+    /*
+     * Used as an onclick handler for the help button
+     * Method must be public and accept a view as a parameter
+     */
+    public void onHelpClick(View view){
+        help_button = (Button) findViewById(R.id.help_button);
+        help_layout = (FrameLayout) findViewById(R.id.map);
+
+        help_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+        ViewGroup help_container = (ViewGroup) help_inflater.inflate(R.layout.help_menu, null);
+
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+        int width = dm.widthPixels;
+        int height = dm.heightPixels;
+
+        help_window = new PopupWindow(help_container, (int)(width*0.95), (int)(height*0.97), true);
+        help_window.setOutsideTouchable(false);
+        help_window.showAtLocation(help_layout, Gravity.NO_GRAVITY, 33, 60);
+//        Button close_button = (Button) findViewById(R.id.helpClose);
+        help_container.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                help_window.dismiss();
+            }
+        });
     }
 
     /*
