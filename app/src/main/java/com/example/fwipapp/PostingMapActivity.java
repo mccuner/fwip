@@ -15,15 +15,18 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.util.Pair;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -37,11 +40,13 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.location.Location;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.view.LayoutInflater;
 
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -61,6 +66,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
+import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
+import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 
 /*
     TODO: Be able to view info about markers
@@ -78,7 +85,8 @@ public class PostingMapActivity extends FragmentActivity implements
         ConnectionCallbacks,
         OnConnectionFailedListener,
         LocationListener,
-        OnMarkerDragListener {
+        OnMarkerDragListener,
+        OnInfoWindowClickListener {
 
     /*
      * Global constants
@@ -86,7 +94,7 @@ public class PostingMapActivity extends FragmentActivity implements
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     /*
-     * Global variables
+     * Class for event data
      */
     private class EventData {
         private String Name;
@@ -165,6 +173,9 @@ public class PostingMapActivity extends FragmentActivity implements
         }
     }
 
+    /*
+     * Global variables
+     */
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
     Location foodLocation;  // This is the last known location of the food marker
@@ -176,8 +187,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_desc;
     private String new_food;
     private EventData new_event_data = new EventData();
-    private Map<Marker, EventData> allMarkersMap = new HashMap<Marker, EventData>();
-
+    private HashMap allMarkersMap = new HashMap<Marker, EventData>();
     private PopupWindow new_event_window;
     private LayoutInflater new_event_inflater;
     private FrameLayout new_event_layout;
@@ -188,84 +198,77 @@ public class PostingMapActivity extends FragmentActivity implements
     private FrameLayout help_layout;
 
     /* This is the custom info window. which I don't wanna see yet. */
+    // TODO: might not need this
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Toast.makeText(this, "Info window clicked",
+                Toast.LENGTH_SHORT).show();
+    }
 
-    // this is how we will customize the info window. we are gonna need to change this up,
-    // and make sure that we include the correct classes and whatnot
-//    class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
-//
-//        // These are both viewgroups containing an ImageView with id "badge" and two TextViews with id
-//        // "title" and "snippet".
-//        private final View mWindow;
-//
-//        private final View mContents;
-//
-//        CustomInfoWindowAdapter() {
-//            mWindow = getLayoutInflater().inflate(R.layout.custom_info_window, null);
-//            mContents = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
-//        }
-//
-//        @Override
-//        public View getInfoWindow(Marker marker) {
-//            if (mOptions.getCheckedRadioButtonId() != R.id.custom_info_window) {
-//                // This means that getInfoContents will be called.
-//                return null;
-//            }
-//            render(marker, mWindow);
-//            return mWindow;
-//        }
-//
-//        @Override
-//        public View getInfoContents(Marker marker) {
-//            if (mOptions.getCheckedRadioButtonId() != R.id.custom_info_contents) {
-//                // This means that the default info contents will be used.
-//                return null;
-//            }
-//            render(marker, mContents);
-//            return mContents;
-//        }
-//
-//        private void render(Marker marker, View view) {
-//            int badge;
-//            // Use the equals() method on a Marker to check for equals.  Do not use ==.
-//            if (marker.equals(mBrisbane)) {
-//                badge = R.drawable.badge_qld;
-//            } else if (marker.equals(mAdelaide)) {
-//                badge = R.drawable.badge_sa;
-//            } else if (marker.equals(mSydney)) {
-//                badge = R.drawable.badge_nsw;
-//            } else if (marker.equals(mMelbourne)) {
-//                badge = R.drawable.badge_victoria;
-//            } else if (marker.equals(mPerth)) {
-//                badge = R.drawable.badge_wa;
-//            } else {
-//                // Passing 0 to setImageResource will clear the image view.
-//                badge = 0;
-//            }
-//            ((ImageView) view.findViewById(R.id.badge)).setImageResource(badge);
-//
-//            String title = marker.getTitle();
-//            TextView titleUi = ((TextView) view.findViewById(R.id.title));
-//            if (title != null) {
-//                // Spannable string allows us to edit the formatting of the text.
-//                SpannableString titleText = new SpannableString(title);
-//                titleText.setSpan(new ForegroundColorSpan(Color.RED), 0, titleText.length(), 0);
-//                titleUi.setText(titleText);
-//            } else {
-//                titleUi.setText("");
-//            }
-//
-//            String snippet = marker.getSnippet();
-//            TextView snippetUi = ((TextView) view.findViewById(R.id.snippet));
-//            if (snippet != null && snippet.length() > 12) {
-//                SpannableString snippetText = new SpannableString(snippet);
-//                snippetText.setSpan(new ForegroundColorSpan(Color.MAGENTA), 0, 10, 0);
-//                snippetText.setSpan(new ForegroundColorSpan(Color.BLUE), 12, snippet.length(), 0);
-//                snippetUi.setText(snippetText);
-//            } else {
-//                snippetUi.setText("");
-//            }
-//        }
-//    }
+
+    /*
+     * Custom Info Window Class
+     */
+    class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+        private final View mWindow;
+//        private View mBackgroud;
+
+        CustomInfoWindowAdapter() {
+            mWindow = getLayoutInflater().inflate(R.layout.custom_info_window, null);
+//            mBackgroud = getLayoutInflater().inflate(R.layout.custom_info_contents, null);
+        }
+
+        @Override
+        public View getInfoWindow(Marker marker) {
+//            Log.d("M", "GET INFO WINDOW");
+//            render(marker, mBackgroud);
+//            return mBackgroud;
+            return null;
+        }
+
+        @Override
+        public View getInfoContents(Marker marker) {
+            Log.d("M", "GET INFO CONTENTS");
+            render(marker, mWindow);
+            return mWindow;
+        }
+
+        private void render(Marker marker, View view) {
+            Log.d("M", "RENDER");
+
+            // Set the event title
+            String title = marker.getTitle();
+            TextView titleUi = ((TextView) view.findViewById(R.id.title));
+            if (title != null) {
+                SpannableString titleText = new SpannableString(title);
+                titleUi.setText(titleText);
+
+            }
+            else {
+                titleUi.setText("");
+            }
+
+            // Parse the snippet for the description and food types
+            String snippet = marker.getSnippet();
+            String[] parts = snippet.split("---");
+            TextView descUi = ((TextView) view.findViewById(R.id.description));
+            if(parts[0] != null) {
+                SpannableString snippetText = new SpannableString(parts[0]);
+                descUi.setText(snippetText);
+            }
+            else {
+                descUi.setText("");
+            }
+            TextView foodUi = ((TextView) view.findViewById(R.id.foodtypes));
+            if(parts[1] != null) {
+                SpannableString snippetText = new SpannableString(parts[1]);
+                foodUi.setText(snippetText);
+            }
+            else {
+                foodUi.setText("");
+            }
+        }
+    }
 
     /*
      * Function used to build the Google Play API client
@@ -300,19 +303,21 @@ public class PostingMapActivity extends FragmentActivity implements
             markerList = new ArrayList<>();
         }
 
-        String newString = "some random string";
+        String newString;
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
             if (extras == null) {
                 newString = "nothing, there is no intent/no extras";
-            } else {
+            }
+            else {
                 newString = "data arrived with intent";
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
 
             }
-        } else {
+        }
+        else {
             newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
         }
         Log.d("M", newString);
@@ -324,7 +329,6 @@ public class PostingMapActivity extends FragmentActivity implements
             public void onClick(View v) {
                 new_event_button.setVisibility(View.GONE);
                 final Button finalize_button = (Button) findViewById(R.id.save_event_button);
-//                finalize_button.setVisibility(View.VISIBLE);
                 new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
                 final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event, null);
                 DisplayMetrics dm = new DisplayMetrics();
@@ -333,12 +337,11 @@ public class PostingMapActivity extends FragmentActivity implements
                 int width = dm.widthPixels;
                 int height = dm.heightPixels;
 
+                // Event window for creating event
                 new_event_window = new PopupWindow(container, (int) (width * 0.96), (int) (height * 0.95), false);
-                // Do more to position the window better!!!!!
                 new_event_window.setTouchable(true);
                 new_event_window.setOutsideTouchable(false);
                 new_event_window.setFocusable(true);
-//                new_event_window.setTouchInterceptor(customPopUpTouchListenr)
                 new_event_window.update();
                 new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 100);
 
@@ -347,11 +350,14 @@ public class PostingMapActivity extends FragmentActivity implements
                     Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
-                            .title("Current Event")
+                            .title("New Food Marker")
                             .snippet("Drag Me!")
                             .draggable(true)
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
                 }
+
+                // this is too much work for rn
+//                foodMarker.showInfoWindow();
 
                 Button cancel_button = (Button) container.findViewById(R.id.Cancel);
                 cancel_button.setOnClickListener(new View.OnClickListener() {
@@ -412,7 +418,10 @@ public class PostingMapActivity extends FragmentActivity implements
                 // click finalize
                 // create new marker
                 LatLng location = foodMarker.getPosition();
-                Marker new_event_marker = mMap.addMarker(new MarkerOptions().position(location));
+                Marker new_event_marker = mMap.addMarker(new MarkerOptions()
+                        .position(location)
+                        .title(new_name)
+                        .snippet(new_desc + "---" + new_food));
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
@@ -469,12 +478,7 @@ public class PostingMapActivity extends FragmentActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                     mLocationRequest,
                     this);
-//            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         }
-//        if (foodLocation != null) {
-//            Log.d("M", "INITIALIZING LOCATION");
-////            onLocationChanged(foodLocation);
-//        }
     }
 
     /**
@@ -508,16 +512,18 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap.getUiSettings().setMapToolbarEnabled(false);
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-        // Set a listener for marker click.
+        // Set listeners
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerDragListener(this);
+        mMap.setOnInfoWindowClickListener(this);
+
+        // Set the new Info Window
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
 
         try {
             loadPreferences();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
@@ -531,13 +537,8 @@ public class PostingMapActivity extends FragmentActivity implements
         // Retrieve the data from the marker.
         Integer clickCount = (Integer) marker.getTag();
 
-        // Check if a click count was set, then display the click count.
-        if (clickCount != null) {
-            clickCount++;
-            marker.setTag(clickCount);
-            Toast.makeText(this, marker.getTitle() + " has been clicked " + clickCount + " times.",
-                    Toast.LENGTH_SHORT).show();
-        }
+        // Show the custom info window
+        marker.showInfoWindow();
         return false;
     }
 
@@ -547,14 +548,6 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMapClick(LatLng point) {
         Log.d("M", "ON MAP CLICK");
-//        Toast.makeText(this, foodLocation.getLatitude() + ", " + foodLocation.getLongitude(), Toast.LENGTH_LONG).show();
-//        Marker newMarker = mMap.addMarker(new MarkerOptions()
-//                .position(point)
-//                .title("New marker number " + Integer.toString(numMarkers++))
-//                .snippet("muahahha"));
-//        newMarker.setTag(0);
-//        newMarker.setTitle("stab marker");
-//        markerList.add(newMarker);
         try {
             savePreferences();
         } catch (IOException e) {
@@ -568,12 +561,14 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMarkerDrag(Marker marker) {}
 
+    /*
+     * Called when the user drags the food marker
+     */
     @Override
     public void onMarkerDragEnd(Marker marker) {
         Log.d("M", "ON MARKER DRAG END");
         LatLng ll = marker.getPosition();
-        foodLocation.setLatitude(ll.latitude);
-        foodLocation.setLongitude(ll.longitude);
+//        Toast.makeText(this, ll.latitude + ", " + ll.longitude, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -587,25 +582,11 @@ public class PostingMapActivity extends FragmentActivity implements
      */
     public void onLocationChanged(Location location) {
         Log.d("M", "ON LOCATION CHANGED");
-//        this.location = location;
-//        foodLocation = location;
         Log.d("LAT", String.valueOf(location.getLatitude()));
         Log.d("LNG", String.valueOf(location.getLongitude()));
-//        if (foodMarker != null) {
-//            foodMarker.remove();
-//        }
-
-        // Place current event marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-        // Move camera
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(19));
-
-        // Stop updates
-//        if (mGoogleApiClient != null) {
-//            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-//        }
     }
 
     /*
@@ -674,17 +655,18 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Clears the map - only here for testing!
      */
-
     public void clearMarkers(View view) {
         Toast.makeText(this, "Clearing Markers", Toast.LENGTH_SHORT).show();
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         int size = mSharedPreferences.getInt("listSize", 0);
-        for(int i = 0; i < size; ++i) {
-            Marker victim = markerList.get(i);
+        Iterator it = allMarkersMap.entrySet().iterator();
+        while(it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            Marker victim = (Marker) pair.getKey();
             victim.remove();
         }
-        markerList.clear();
+        allMarkersMap.clear();
         editor.clear();
         editor.apply();
     }
@@ -759,5 +741,6 @@ public class PostingMapActivity extends FragmentActivity implements
 
         allMarkersMap = (HashMap) objectInputStream.readObject();
         objectInputStream.close();
+
     }
 }
