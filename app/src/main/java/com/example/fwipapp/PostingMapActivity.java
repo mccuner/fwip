@@ -42,6 +42,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 
 /*
     TODO: Be able to view info about markers
@@ -58,38 +59,27 @@ public class PostingMapActivity extends FragmentActivity implements
         OnMapClickListener,
         ConnectionCallbacks,
         OnConnectionFailedListener,
-        LocationListener {
+        LocationListener,
+        OnMarkerDragListener {
 
     /*
-     * Private variables, used in the functions defined below
+     * Global constants
+     */
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
+    /*
+     * Global variables
      */
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
-    Location mLastLocation;
-    Marker mCurrLocationMarker;
-    private int numMarkers;
+    Location foodLocation;  // This is the last known location of the food marker
+    Marker foodMarker;      // This is the purple marker
     LocationRequest mLocationRequest;
     SupportMapFragment mapFrag;
-    SharedPreferences mSharedPrefs = null;
     private List<Marker> markerList;
-
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private String new_name;
     private String new_desc;
     private String new_food;
-
-    /*
-     * Function used to build the Google Play API client
-     */
-    protected synchronized void buildGoogleApiClient() {
-        Log.d("M", "BUILD GOOGLE API CLIENT");
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        mGoogleApiClient.connect();
-    }
 
     private PopupWindow new_event_window;
     private LayoutInflater new_event_inflater;
@@ -176,6 +166,19 @@ public class PostingMapActivity extends FragmentActivity implements
 //    }
 
     /*
+     * Function used to build the Google Play API client
+     */
+    protected synchronized void buildGoogleApiClient() {
+        Log.d("M", "BUILD GOOGLE API CLIENT");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        mGoogleApiClient.connect();
+    }
+
+    /*
      * Runs on when Fwip is started
      */
     @Override
@@ -200,14 +203,16 @@ public class PostingMapActivity extends FragmentActivity implements
             Bundle extras = getIntent().getExtras();
             if(extras == null) {
                 newString= "nothing, there is no intent/no extras";
-            } else {
+            }
+            else {
                 newString = "data arrived with intent";
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
 
             }
-        } else {
+        }
+        else {
             newString= (String) savedInstanceState.getSerializable("STRING_I_NEED");
         }
         Log.d("M", newString);
@@ -260,15 +265,14 @@ public class PostingMapActivity extends FragmentActivity implements
     }
 
     /*
-     * Runs on when Fwip is connected
+     * Runs when Fwip is connected
      */
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("M", "ON CONNECTED");
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(1000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        mLocationRequest.setInterval(200);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -276,11 +280,11 @@ public class PostingMapActivity extends FragmentActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
                     mLocationRequest,
                     this);
-            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            foodLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         }
-        if (mLastLocation != null) {
+        if (foodLocation != null) {
             Log.d("M", "INITIALIZING LOCATION");
-            onLocationChanged(mLastLocation);
+            onLocationChanged(foodLocation);
         }
     }
 
@@ -318,7 +322,9 @@ public class PostingMapActivity extends FragmentActivity implements
         // Set a listener for marker click.
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
+        mMap.setOnMarkerDragListener(this);
 
+        // Load map markers
         loadPreferences();
     }
 
@@ -347,14 +353,29 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMapClick(LatLng point) {
         Log.d("M", "ON MAP CLICK");
-        Marker newMarker = mMap.addMarker(new MarkerOptions()
-                .position(point)
-                .title("New marker number " + Integer.toString(numMarkers++))
-                .snippet("muahahha"));
-        newMarker.setTag(0);
-        newMarker.setTitle("stab marker");
-        markerList.add(newMarker);
+//        Toast.makeText(this, foodLocation.getLatitude() + ", " + foodLocation.getLongitude(), Toast.LENGTH_LONG).show();
+//        Marker newMarker = mMap.addMarker(new MarkerOptions()
+//                .position(point)
+//                .title("New marker number " + Integer.toString(numMarkers++))
+//                .snippet("muahahha"));
+//        newMarker.setTag(0);
+//        newMarker.setTitle("stab marker");
+//        markerList.add(newMarker);
         savePreferences();
+    }
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {}
+
+    @Override
+    public void onMarkerDrag(Marker marker) {}
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {
+        Log.d("M", "ON MARKER DRAG END");
+        LatLng ll = marker.getPosition();
+        foodLocation.setLatitude(ll.latitude);
+        foodLocation.setLongitude(ll.longitude);
     }
 
     @Override
@@ -368,25 +389,27 @@ public class PostingMapActivity extends FragmentActivity implements
      */
     public void onLocationChanged(Location location) {
         Log.d("M", "ON LOCATION CHANGED");
-        mLastLocation = location;
-        Log.d("LAT", String.valueOf(mLastLocation.getLatitude()));
-        Log.d("LONG", String.valueOf(mLastLocation.getLongitude()));
-        if (mCurrLocationMarker != null) {
-            mCurrLocationMarker.remove();
+//        this.location = location;
+        foodLocation = location;
+        Log.d("LAT", String.valueOf(foodLocation.getLatitude()));
+        Log.d("LNG", String.valueOf(foodLocation.getLongitude()));
+        if (foodMarker != null) {
+            foodMarker.remove();
         }
 
-        // Place current location marker
+        // Place current event marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(latLng);
-        markerOptions.title("Current Position");
-        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(
-                BitmapDescriptorFactory.HUE_MAGENTA));
-        mCurrLocationMarker = mMap.addMarker(markerOptions);
+        foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
+                .title("Current Event")
+                .snippet("Drag Me!")
+                .draggable(true)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
+
+        // TODO: i need the latitude and longitude of this marker at any time
 
         // Move camera
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(19));
 
         // Stop updates
         if (mGoogleApiClient != null) {
@@ -427,14 +450,10 @@ public class PostingMapActivity extends FragmentActivity implements
             return true;
         }
     }
-    public void makeNewEvent(View view) {
-        Intent intent = new Intent(this, Post_Event.class);
-//        EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = "Some message!";
 
-        startActivity(intent);
-    }
-
+    /*
+     * Clears the map - only here for testing!
+     */
     public void clearMarkers(View view) {
         Toast.makeText(this, "Clearing Markers", Toast.LENGTH_SHORT).show();
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
@@ -464,13 +483,11 @@ public class PostingMapActivity extends FragmentActivity implements
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
-
                         if (mGoogleApiClient == null) {
                             buildGoogleApiClient();
                         }
                         mMap.setMyLocationEnabled(true);
                     }
-
                 }
                 else {
                     Toast.makeText(this, "PERMISSION DENIED", Toast.LENGTH_LONG).show();
