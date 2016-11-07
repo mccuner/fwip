@@ -401,6 +401,7 @@ public class PostingMapActivity extends FragmentActivity implements
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
+                markerList.add(new_event_marker);
 
                 // remove purple marker
                 foodMarker.remove();
@@ -510,10 +511,6 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public boolean onMarkerClick(final Marker marker) {
         Log.d("M", "ON MARKER CLICK");
-        // Retrieve the data from the marker.
-        Integer clickCount = (Integer) marker.getTag();
-
-        // Show the custom info window
         marker.showInfoWindow();
         return false;
     }
@@ -543,8 +540,6 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMarkerDragEnd(Marker marker) {
         Log.d("M", "ON MARKER DRAG END");
-        LatLng ll = marker.getPosition();
-//        Toast.makeText(this, ll.latitude + ", " + ll.longitude, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -562,7 +557,7 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("LNG", String.valueOf(location.getLongitude()));
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(19));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(18));
     }
 
     /*
@@ -636,9 +631,13 @@ public class PostingMapActivity extends FragmentActivity implements
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         int size = mSharedPreferences.getInt("listSize", 0);
-        Iterator it = allMarkersMap.entrySet().iterator();
-        while(it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
+        for(int i = 0; i < size; ++i) {
+            Marker victim = markerList.get(0);
+            victim.remove();
+        }
+        markerList.clear();
+        for (Object o : allMarkersMap.entrySet()) {
+            Map.Entry pair = (Map.Entry) o;
             Marker victim = (Marker) pair.getKey();
             victim.remove();
         }
@@ -686,6 +685,7 @@ public class PostingMapActivity extends FragmentActivity implements
             editor.putFloat("Lat" + i, (float) markerList.get(i).getPosition().latitude);
             editor.putFloat("Lng" + i, (float) markerList.get(i).getPosition().longitude);
             editor.putString("Title" + i, markerList.get(i).getTitle());
+            editor.putString("Snippet" + i, markerList.get(i).getSnippet());
         }
         editor.apply();
 
@@ -707,8 +707,11 @@ public class PostingMapActivity extends FragmentActivity implements
             double lat = (double) mSharedPreferences.getFloat("Lat" + i, 0);
             double lng = (double) mSharedPreferences.getFloat("Lng" + i, 0);
             String title = mSharedPreferences.getString("Title" + i, "NULL");
-            markerList.add(mMap.addMarker(new MarkerOptions().position(
-                    new LatLng(lat, lng)).title(title)));
+            String snippet = mSharedPreferences.getString("Snippet" + i, "NULL");
+            markerList.add(mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(lat, lng))
+                    .title(title)
+                    .snippet(snippet)));
         }
 
         // Read in Marker Data from internal storage
