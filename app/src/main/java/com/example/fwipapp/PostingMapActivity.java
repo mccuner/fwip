@@ -425,6 +425,7 @@ public class PostingMapActivity extends FragmentActivity implements
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
+                markerList.add(new_event_marker);
 
                 // remove purple marker
                 foodMarker.remove();
@@ -714,11 +715,11 @@ public class PostingMapActivity extends FragmentActivity implements
         editor.apply();
 
         // save marker data when closed
-        File file = new File(getFilesDir(), "map");
-        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
-        outputStream.writeObject(allMarkersMap);
-        outputStream.flush();
-        outputStream.close();
+//        File file = new File(getFilesDir(), "map");
+//        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
+//        outputStream.writeObject(allMarkersMap);
+//        outputStream.flush();
+//        outputStream.close();
     }
 
     /*
@@ -736,11 +737,20 @@ public class PostingMapActivity extends FragmentActivity implements
         }
 
         // Read in Marker Data from internal storage
-        FileInputStream fileInputStream  = new FileInputStream("myMap.whateverExtension");
-        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-
-        allMarkersMap = (HashMap) objectInputStream.readObject();
-        objectInputStream.close();
-
+//        FileInputStream fileInputStream  = new FileInputStream(getFilesDir() + "/map");
+//        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+//
+//        allMarkersMap = (HashMap) objectInputStream.readObject();
+//        objectInputStream.close();
+//        size = allMarkersMap.size();
+//        Log.d("M", String.valueOf(size));
+//        Iterator it = allMarkersMap.entrySet().iterator();
+//        while (it.hasNext()) {
+//            Map.Entry pair = (Map.Entry)it.next();
+//            Marker new_marker = (Marker) pair.getKey();
+//            mMap.addMarker(new MarkerOptions()
+//                    .position(new_marker.getPosition()));
+//            it.remove(); // avoids a ConcurrentModificationException
+//        }
     }
 }
