@@ -1,14 +1,27 @@
 package com.example.fwipapp;
 
 // Libraries
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.content.Intent;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +30,7 @@ import android.Manifest;
 import android.os.Build;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.PopupWindow;
 import android.widget.Toast;
@@ -25,6 +39,7 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 
+import com.google.android.gms.games.event.Event;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -63,6 +78,43 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Private variables, used in the functions defined below
      */
+    private class EventData {
+        private String Name;
+        private String Description;
+        private String Food;
+
+        //constructor
+        public EventData(String name, String description, String food){
+            this.Name = name;
+            this.Description = description;
+            this.Food = food;
+        }
+
+        //getters
+        public String getName(){
+            return Name;
+        }
+        public String getDesc(){
+            return Description;
+        }
+        public String getFood(){
+            return Food;
+        }
+
+        //setters
+        public void setName(String new_name){
+            this.Name = new_name;
+            return;
+        }
+        public void setDesc(String new_desc){
+            this.Description = new_desc;
+            return;
+        }
+        public void setFood(String new_food){
+            this.Food = new_food;
+            return;
+        }
+    }
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
     Location mLastLocation;
@@ -77,6 +129,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_name;
     private String new_desc;
     private String new_food;
+    private Map<Marker, EventData> allMarkersMap = new HashMap<Marker, EventData>();
 
     /*
      * Function used to build the Google Play API client
@@ -218,11 +271,22 @@ public class PostingMapActivity extends FragmentActivity implements
             @Override
             public void onClick(View v){
                 new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
-                ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event,null);
-                new_event_window = new PopupWindow(container,1370,925,false);
-                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY,38,1450);
+                final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event,null);
+                DisplayMetrics dm = new DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+                int width = dm.widthPixels;
+                int height = dm.heightPixels;
+
+                new_event_window = new PopupWindow(container,(int)(width*0.96),(int)(height*0.39),false);
+                // Do more to position the window better!!!!!
+                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY,33,1450);
                 new_event_window.setFocusable(true);
                 new_event_window.update();
+
+                // make new, draggable marker
+                LatLng currentloc = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                final Marker new_event_marker = mMap.addMarker(new MarkerOptions().position(currentloc).draggable(true));
 
                 Button cancel_button = (Button) container.findViewById(R.id.Cancel);
                 cancel_button.setOnClickListener(new View.OnClickListener() {
@@ -236,9 +300,19 @@ public class PostingMapActivity extends FragmentActivity implements
                     @Override
                     public void onClick(View v) {
                         // get data from forms
-                        // place a marker
+                        EditText name_el = (EditText) container.findViewById(R.id.InputName);
+                        new_name = name_el.getText().toString();
+                        EditText desc_el = (EditText) container.findViewById(R.id.InputDescription);
+                        new_desc = desc_el.getText().toString();
+                        EditText food_el = (EditText) container.findViewById(R.id.InputFood);
+                        new_food = food_el.getText().toString();
+                        // place a marker...some of matt's code/idea
+                        new_event_marker.setDraggable(false);
                         // save marker
-                        // do some more mumbo jumbo
+                        // no need to save, it's done on close
+                        // save data associated with marker
+                        EventData new_event_data = new EventData(new_name, new_desc, new_food);
+                        allMarkersMap.put(new_event_marker, new_event_data);
                         new_event_window.dismiss();
                     }
                 });
@@ -252,7 +326,11 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onPause() {
         Log.d("M", "ON PAUSE");
-        savePreferences();
+        try {
+            savePreferences();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         super.onPause();
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -319,7 +397,13 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
 
-        loadPreferences();
+        try {
+            loadPreferences();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     /*
@@ -354,7 +438,11 @@ public class PostingMapActivity extends FragmentActivity implements
         newMarker.setTag(0);
         newMarker.setTitle("stab marker");
         markerList.add(newMarker);
-        savePreferences();
+        try {
+            savePreferences();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -427,13 +515,6 @@ public class PostingMapActivity extends FragmentActivity implements
             return true;
         }
     }
-    public void makeNewEvent(View view) {
-        Intent intent = new Intent(this, Post_Event.class);
-//        EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = "Some message!";
-
-        startActivity(intent);
-    }
 
     public void clearMarkers(View view) {
         Toast.makeText(this, "Clearing Markers", Toast.LENGTH_SHORT).show();
@@ -482,7 +563,7 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Saves all map markers
      */
-    private void savePreferences() {
+    private void savePreferences() throws IOException {
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         editor.putInt("listSize", markerList.size());
@@ -492,12 +573,19 @@ public class PostingMapActivity extends FragmentActivity implements
             editor.putString("Title" + i, markerList.get(i).getTitle());
         }
         editor.apply();
+
+        // save marker data when closed
+        File file = new File(getFilesDir(), "map");
+        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
+        outputStream.writeObject(allMarkersMap);
+        outputStream.flush();
+        outputStream.close();
     }
 
     /*
      * Loads all map markers
      */
-    private void loadPreferences() {
+    private void loadPreferences() throws IOException, ClassNotFoundException {
         SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
         int size = mSharedPreferences.getInt("listSize", 0);
         for(int i = 0; i < size; ++i) {
@@ -507,5 +595,12 @@ public class PostingMapActivity extends FragmentActivity implements
             markerList.add(mMap.addMarker(new MarkerOptions().position(
                     new LatLng(lat, lng)).title(title)));
         }
+
+        // Read in Marker Data from internal storage
+        FileInputStream fileInputStream  = new FileInputStream("myMap.whateverExtension");
+        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+
+        allMarkersMap = (HashMap) objectInputStream.readObject();
+        objectInputStream.close();
     }
 }
