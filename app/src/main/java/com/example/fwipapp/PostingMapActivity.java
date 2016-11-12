@@ -69,6 +69,8 @@ import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
 import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 
+import com.parse.*;
+
 /*
     TODO: Be able to view info about markers
     TODO: Be able to place markers
@@ -284,6 +286,14 @@ public class PostingMapActivity extends FragmentActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
 
+        // connect to parse database
+        Parse.initialize(new Parse.Configuration.Builder(this.getApplicationContext())
+                .applicationId(getString(R.string.parse_app_id))
+                .clientKey(getString(R.string.parse_client_id))
+                .server("https://parseapi.back4app.com")
+                .build()
+        );
+
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
         }
@@ -402,6 +412,12 @@ public class PostingMapActivity extends FragmentActivity implements
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
                 markerList.add(new_event_marker);
+                ParseObject new_parse_marker = new ParseObject("Events");
+                new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
+                new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
+                new_parse_marker.put("name", new_name);
+                new_parse_marker.put("snippet", new_event_marker.getSnippet());
+                new_parse_marker.saveInBackground();
 
                 // remove purple marker
                 foodMarker.remove();
@@ -428,11 +444,12 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onPause() {
         Log.d("M", "ON PAUSE");
-        try {
-            savePreferences();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            savePreferences();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
         super.onPause();
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -498,11 +515,12 @@ public class PostingMapActivity extends FragmentActivity implements
         // Set the new Info Window
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
 
-        try {
-            loadPreferences();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            loadPreferences();
+//        } catch (IOException | ClassNotFoundException e) {
+//            e.printStackTrace();
+//        }
+        loadMarkersFromDatabase();
     }
 
     /*
@@ -512,7 +530,6 @@ public class PostingMapActivity extends FragmentActivity implements
     public boolean onMarkerClick(final Marker marker) {
         Log.d("M", "ON MARKER CLICK");
         // Retrieve the data from the marker.
-        Integer clickCount = (Integer) marker.getTag();
 
         // Show the custom info window
         marker.showInfoWindow();
@@ -525,11 +542,11 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onMapClick(LatLng point) {
         Log.d("M", "ON MAP CLICK");
-        try {
-            savePreferences();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            savePreferences();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
     @Override
@@ -728,5 +745,27 @@ public class PostingMapActivity extends FragmentActivity implements
 //                    .position(new_marker.getPosition()));
 //            it.remove(); // avoids a ConcurrentModificationException
 //        }
+    }
+    private void loadMarkersFromDatabase()
+    {
+        Log.d("M", "loading markers from parse...");
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Events");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            public void done(List<ParseObject> objects, ParseException e) {
+                if (e == null) {
+                    //successful
+                    for(ParseObject this_marker : objects)
+                    {
+                        LatLng new_position = new LatLng(this_marker.getDouble("latitude"), this_marker.getDouble("longitude"));
+                        mMap.addMarker(new MarkerOptions().position(new_position)
+                                .title(this_marker.getString("name"))
+                                .snippet(this_marker.getString("snippet")));
+                    }
+                } else {
+                    //failed
+                    Log.d("M", "Marker retrieval from parse failed.");
+                }
+            }
+        });
     }
 }
