@@ -44,5 +44,16 @@
             android:maxLines="1"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp" />
+        <TextView
+            android:id="@+id/dateTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:ellipsize="end"
+            android:textColor="#a0a2a5"
+            android:textSize="20sp"
+            android:maxLines="1"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp" />
     </LinearLayout>
 </LinearLayout>

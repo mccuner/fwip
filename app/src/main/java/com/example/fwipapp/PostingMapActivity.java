@@ -1,7 +1,6 @@
 package com.example.fwipapp;
 
 // Libraries
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -21,6 +20,7 @@ import java.util.Map;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -48,6 +48,9 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.view.LayoutInflater;
 
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -96,6 +99,48 @@ public class PostingMapActivity extends FragmentActivity implements
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     /*
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("PostingMap Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
+    }
+
+    /*
      * Class for event data
      */
     private class EventData {
@@ -106,13 +151,12 @@ public class PostingMapActivity extends FragmentActivity implements
         private Date Last_Updated;
         private Calendar Clear_Time;
 
-        //constructor
-        public EventData(){
+        // constructor
+        public EventData() {
             this.Clear_Time = Calendar.getInstance();
             this.Clear_Time.setTime(new Date());
             this.Created = Clear_Time.getTime(); //now
             this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
-            return;
         }
 
         public EventData(String name, String description, String food) {
@@ -138,11 +182,17 @@ public class PostingMapActivity extends FragmentActivity implements
             return Food;
         }
 
-        public Date getCreated(){ return Created; }
+        public Date getCreated() {
+            return Created;
+        }
 
-        public Date getLast_Updated(){ return Last_Updated; }
+        public Date getLast_Updated() {
+            return Last_Updated;
+        }
 
-        public Date getClear_Time(){ return Clear_Time.getTime(); }
+        public Date getClear_Time() {
+            return Clear_Time.getTime();
+        }
 
         //setters
         public void setName(String new_name) {
@@ -157,15 +207,17 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Food = new_food;
         }
 
-        public void setDates(Date time){
+        public void setDates(Date time) {
             this.Created = this.Last_Updated = time;
             this.Clear_Time.setTime(time);
             addTime();
         }
 
-        public void setLast_Updated(Date time){ this.Last_Updated = time; }
+        public void setLast_Updated(Date time) {
+            this.Last_Updated = time;
+        }
 
-        public void addTime(){
+        public void addTime() {
             // will change with time - lol puns
             this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1);
         }
@@ -199,7 +251,6 @@ public class PostingMapActivity extends FragmentActivity implements
     private LayoutInflater help_inflater;
     private FrameLayout help_layout;
 
-    /* This is the custom info window. which I don't wanna see yet. */
     // TODO: might not need this or idk
     @Override
     public void onInfoWindowClick(Marker marker) {}
@@ -207,7 +258,7 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Custom Info Window Class
      */
-    class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
+    class CustomInfoWindowAdapter implements InfoWindowAdapter {
         private final View mWindow;
 
         CustomInfoWindowAdapter() {
@@ -236,8 +287,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 SpannableString titleText = new SpannableString(title);
                 titleUi.setText(titleText);
 
-            }
-            else {
+            } else {
                 titleUi.setText("");
             }
 
@@ -245,21 +295,27 @@ public class PostingMapActivity extends FragmentActivity implements
             String snippet = marker.getSnippet();
             String[] parts = snippet.split("---");
             TextView descUi = ((TextView) view.findViewById(R.id.description));
-            if(parts[0] != null) {
+            if (parts[0] != null) {
                 SpannableString snippetText = new SpannableString(parts[0]);
                 descUi.setText(snippetText);
-            }
-            else {
+            } else {
                 descUi.setText("");
             }
             TextView foodUi = ((TextView) view.findViewById(R.id.foodtypes));
-            if(parts.length > 1) {
+            if (parts.length > 1) {
                 if (parts[1] != null) {
                     SpannableString snippetText = new SpannableString(parts[1]);
                     foodUi.setText(snippetText);
                 } else {
                     foodUi.setText("");
                 }
+            }
+            TextView dateUi = ((TextView) view.findViewById(R.id.dateTime));
+            if (parts.length > 2) {
+                SpannableString dateText = new SpannableString(parts[2]);
+                dateUi.setText(dateText);
+            } else {
+                dateUi.setText("");
             }
         }
     }
@@ -294,7 +350,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 .build()
         );
 
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
         }
 
@@ -310,16 +366,14 @@ public class PostingMapActivity extends FragmentActivity implements
             Bundle extras = getIntent().getExtras();
             if (extras == null) {
                 newString = "nothing, there is no intent/no extras";
-            }
-            else {
+            } else {
                 newString = "data arrived with intent";
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
 
             }
-        }
-        else {
+        } else {
             newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
         }
         Log.d("M", newString);
@@ -348,7 +402,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 100);
 
                 // make new, draggable marker
-                if(checkLocationPermission()) {
+                if (checkLocationPermission()) {
                     Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
                     LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                     foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
@@ -379,13 +433,12 @@ public class PostingMapActivity extends FragmentActivity implements
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
                         new_food = food_el.getText().toString();
 
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-                        Date now = new Date();
-
                         new_event_data.setName(new_name);
                         new_event_data.setDesc(new_desc);
                         new_event_data.setFood(new_food);
-                        new_event_data.setDates(new Date()); // sets created time to now, last_upt to now, clear_time to an hour from now
+
+                        // sets created time to now, last_upt to now, clear_time to an hour from now
+                        new_event_data.setDates(new Date());
 
                         new_event_window.dismiss();
                         final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
@@ -395,23 +448,24 @@ public class PostingMapActivity extends FragmentActivity implements
                 });
             }
         });
+
+        // Create 2 new buttons at bottom of screen
         final Button finalize_button = (Button) findViewById(R.id.save_event_button);
         final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
-        finalize_button.setOnClickListener(new View.OnClickListener(){
+
+        // Listener for submission button
+        finalize_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // move purple marker (done by user)
-                // click finalize
-                // create new marker
                 LatLng location = foodMarker.getPosition();
                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(new_name)
-                        .snippet(new_desc + "---" + new_food));
+                        .snippet(new_desc + "---" + new_food + "---" + new_event_data.getCreated()));
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
-                markerList.add(new_event_marker);
+//                markerList.add(new_event_marker);
                 ParseObject new_parse_marker = new ParseObject("Events");
                 new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
                 new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
@@ -427,16 +481,24 @@ public class PostingMapActivity extends FragmentActivity implements
                 cancel_event_button.setVisibility(View.GONE);
             }
         });
-        cancel_event_button.setOnClickListener(new View.OnClickListener(){
+
+
+        cancel_event_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // remove purple marker
                 foodMarker.remove();
+
+                // reset the bottom button to "New Event"
                 finalize_button.setVisibility(View.GONE);
                 cancel_event_button.setVisibility(View.GONE);
                 new_event_button.setVisibility(View.VISIBLE);
             }
         });
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     /*
@@ -445,11 +507,6 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onPause() {
         Log.d("M", "ON PAUSE");
-//        try {
-//            savePreferences();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
         super.onPause();
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -475,7 +532,7 @@ public class PostingMapActivity extends FragmentActivity implements
         }
     }
 
-    /**
+    /*
      * Manipulates the map once available
      *
      * If Google Play services is not installed on the device, the user will be prompted to install
@@ -488,7 +545,7 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap = googleMap;
 
         // Initialize Google Play Services
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
@@ -496,17 +553,19 @@ public class PostingMapActivity extends FragmentActivity implements
                 Log.d("M", "SET LOCATION TRUE");
                 mMap.setMyLocationEnabled(true);
             }
-        }
-        else {
+        } else {
             buildGoogleApiClient();
             Log.d("M", "SET LOCATION TRUE");
             mMap.setMyLocationEnabled(true);
         }
 
+        // Get rid of toolbar
         mMap.getUiSettings().setMapToolbarEnabled(false);
+
+        // Set location button
         mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
-        // Set listeners
+        // Set all of the listeners
         mMap.setOnMarkerClickListener(this);
         mMap.setOnMapClickListener(this);
         mMap.setOnMarkerDragListener(this);
@@ -514,12 +573,6 @@ public class PostingMapActivity extends FragmentActivity implements
 
         // Set the new Info Window
         mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter());
-
-//        try {
-//            loadPreferences();
-//        } catch (IOException | ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
         loadMarkersFromDatabase();
     }
 
@@ -534,41 +587,6 @@ public class PostingMapActivity extends FragmentActivity implements
     }
 
     /*
-     * Called when the user clicks the map
-     */
-    @Override
-    public void onMapClick(LatLng point) {
-        Log.d("M", "ON MAP CLICK");
-//        try {
-//            savePreferences();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-    }
-
-    @Override
-    public void onMarkerDragStart(Marker marker) {}
-
-    @Override
-    public void onMarkerDrag(Marker marker) {}
-
-    /*
-     * Called when the user drags the food marker
-     */
-    @Override
-    public void onMarkerDragEnd(Marker marker) {
-        Log.d("M", "ON MARKER DRAG END");
-        LatLng ll = marker.getPosition();
-//        Toast.makeText(this, ll.latitude + ", " + ll.longitude, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {}
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {}
-
-    /*
      * Called when the user's location changes
      */
     public void onLocationChanged(Location location) {
@@ -577,14 +595,14 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("LNG", String.valueOf(location.getLongitude()));
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(18));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
     }
 
     /*
      * Used as an onclick handler for the help button
      * Method must be public and accept a view as a parameter
      */
-    public void onHelpClick(View view){
+    public void onHelpClick(View view) {
         help_button = (Button) findViewById(R.id.help_button);
         help_layout = (FrameLayout) findViewById(R.id.map);
 
@@ -597,10 +615,9 @@ public class PostingMapActivity extends FragmentActivity implements
         int width = dm.widthPixels;
         int height = dm.heightPixels;
 
-        help_window = new PopupWindow(help_container, (int)(width*0.95), (int)(height*0.97), true);
+        help_window = new PopupWindow(help_container, (int) (width * 0.95), (int) (height * 0.97), true);
         help_window.setOutsideTouchable(false);
         help_window.showAtLocation(help_layout, Gravity.NO_GRAVITY, 33, 60);
-//        Button close_button = (Button) findViewById(R.id.helpClose);
         help_container.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -630,8 +647,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
-            }
-            else {
+            } else {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
@@ -641,29 +657,6 @@ public class PostingMapActivity extends FragmentActivity implements
             Log.d("M", "PERMISSION GRANTED");
             return true;
         }
-    }
-
-    /*
-     * Clears the map - only here for testing!
-     */
-    public void clearMarkers(View view) {
-        Toast.makeText(this, "Clearing Markers", Toast.LENGTH_SHORT).show();
-        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = mSharedPreferences.edit();
-        int size = mSharedPreferences.getInt("listSize", 0);
-        for(int i = 0; i < size; ++i) {
-            Marker victim = markerList.get(0);
-            victim.remove();
-        }
-        markerList.clear();
-        for (Object o : allMarkersMap.entrySet()) {
-            Map.Entry pair = (Map.Entry) o;
-            Marker victim = (Marker) pair.getKey();
-            victim.remove();
-        }
-        allMarkersMap.clear();
-        editor.clear();
-        editor.apply();
     }
 
     /*
@@ -686,8 +679,7 @@ public class PostingMapActivity extends FragmentActivity implements
                         }
                         mMap.setMyLocationEnabled(true);
                     }
-                }
-                else {
+                } else {
                     Toast.makeText(this, "PERMISSION DENIED", Toast.LENGTH_LONG).show();
                 }
             }
@@ -695,82 +687,46 @@ public class PostingMapActivity extends FragmentActivity implements
     }
 
     /*
-     * Saves all map markers
+     * Function for loading markers from the Parse database
      */
-    private void savePreferences() throws IOException {
-        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = mSharedPreferences.edit();
-        editor.putInt("listSize", markerList.size());
-        for (int i = 0; i < markerList.size(); ++i) {
-            editor.putFloat("Lat" + i, (float) markerList.get(i).getPosition().latitude);
-            editor.putFloat("Lng" + i, (float) markerList.get(i).getPosition().longitude);
-            editor.putString("Title" + i, markerList.get(i).getTitle());
-            editor.putString("Snippet" + i, markerList.get(i).getSnippet());
-        }
-        editor.apply();
-
-        // save marker data when closed
-//        File file = new File(getFilesDir(), "map");
-//        ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(file));
-//        outputStream.writeObject(allMarkersMap);
-//        outputStream.flush();
-//        outputStream.close();
-    }
-
-    /*
-     * Loads all map markers
-     */
-    private void loadPreferences() throws IOException, ClassNotFoundException {
-        SharedPreferences mSharedPreferences = getPreferences(MODE_PRIVATE);
-        int size = mSharedPreferences.getInt("listSize", 0);
-        for(int i = 0; i < size; ++i) {
-            double lat = (double) mSharedPreferences.getFloat("Lat" + i, 0);
-            double lng = (double) mSharedPreferences.getFloat("Lng" + i, 0);
-            String title = mSharedPreferences.getString("Title" + i, "NULL");
-            String snippet = mSharedPreferences.getString("Snippet" + i, "NULL");
-            markerList.add(mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(lat, lng))
-                    .title(title)
-                    .snippet(snippet)));
-        }
-
-        // Read in Marker Data from internal storage
-//        FileInputStream fileInputStream  = new FileInputStream(getFilesDir() + "/map");
-//        ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-//
-//        allMarkersMap = (HashMap) objectInputStream.readObject();
-//        objectInputStream.close();
-//        size = allMarkersMap.size();
-//        Log.d("M", String.valueOf(size));
-//        Iterator it = allMarkersMap.entrySet().iterator();
-//        while (it.hasNext()) {
-//            Map.Entry pair = (Map.Entry)it.next();
-//            Marker new_marker = (Marker) pair.getKey();
-//            mMap.addMarker(new MarkerOptions()
-//                    .position(new_marker.getPosition()));
-//            it.remove(); // avoids a ConcurrentModificationException
-//        }
-    }
-    private void loadMarkersFromDatabase()
-    {
+    private void loadMarkersFromDatabase() {
         Log.d("M", "loading markers from parse...");
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Events");
         query.findInBackground(new FindCallback<ParseObject>() {
             public void done(List<ParseObject> objects, ParseException e) {
                 if (e == null) {
-                    //successful
-                    for(ParseObject this_marker : objects)
-                    {
+                    // successful
+                    for (ParseObject this_marker : objects) {
                         LatLng new_position = new LatLng(this_marker.getDouble("latitude"), this_marker.getDouble("longitude"));
                         mMap.addMarker(new MarkerOptions().position(new_position)
                                 .title(this_marker.getString("name"))
                                 .snippet(this_marker.getString("snippet")));
                     }
                 } else {
-                    //failed
+                    // failed
                     Log.d("M", "Marker retrieval from parse failed.");
                 }
             }
         });
     }
+
+    @Override
+    public void onMapClick(LatLng point) {}
+
+    @Override
+    public void onMarkerDragStart(Marker marker) {}
+
+    @Override
+    public void onMarkerDrag(Marker marker) {}
+
+    @Override
+    public void onMarkerDragEnd(Marker marker) {}
+
+    @Override
+    public void onConnectionSuspended(int i) {}
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {}
 }
+
+
