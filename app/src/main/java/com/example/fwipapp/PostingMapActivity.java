@@ -417,6 +417,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
                 new_parse_marker.put("name", new_name);
                 new_parse_marker.put("snippet", new_event_marker.getSnippet());
+                new_parse_marker.put("clear_time", new_event_data.getClear_Time());
                 new_parse_marker.saveInBackground();
 
                 // remove purple marker
