@@ -427,10 +427,13 @@ public class PostingMapActivity extends FragmentActivity implements
                     public void onClick(View v) {
                         // get data from forms
                         EditText name_el = (EditText) container.findViewById(R.id.InputName);
+                        name_el.setTextColor(Color.BLACK);
                         new_name = name_el.getText().toString();
                         EditText desc_el = (EditText) container.findViewById(R.id.InputDescription);
+                        desc_el.setTextColor(Color.BLACK);
                         new_desc = desc_el.getText().toString();
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
+                        food_el.setTextColor(Color.BLACK);
                         new_food = food_el.getText().toString();
 
                         new_event_data.setName(new_name);
