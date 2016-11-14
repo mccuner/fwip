@@ -12,4 +12,5 @@
     <string name="food_types">Types of food:</string>
     <string name="parse_app_id">hX4SIkYg6kaNIHMWUlrs6FUqgQovvIXLFYYTDHk3</string>
     <string name="parse_client_id">cUbWKQ8w4q6uYOV5SbWPKRiOXlyRjGwuPyMv5UXe</string>
+    <string name="help_string">Welcome to Fwip!\n\nClick on markers to find out about food near you, or click the New Event button to tell others about your food!\n\nClick anywhere to close.</string>
 </resources>
