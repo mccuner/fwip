@@ -475,6 +475,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_parse_marker.put("name", new_name);
                 new_parse_marker.put("snippet", new_event_marker.getSnippet());
                 new_parse_marker.put("clear_time", new_event_data.getClear_Time());
+                new_parse_marker.put("created_time", new_event_data.getCreated());
                 new_parse_marker.saveInBackground();
 
                 // remove purple marker
@@ -703,7 +704,7 @@ public class PostingMapActivity extends FragmentActivity implements
                         LatLng new_position = new LatLng(this_marker.getDouble("latitude"), this_marker.getDouble("longitude"));
                         mMap.addMarker(new MarkerOptions().position(new_position)
                                 .title(this_marker.getString("name"))
-                                .snippet(this_marker.getString("snippet")));
+                                .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
                     }
                 } else {
                     // failed
