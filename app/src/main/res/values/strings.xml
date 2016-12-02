@@ -7,9 +7,9 @@
     <string name="finalize_event">Save and Post</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
-    <string name="name">Event Name:</string>
-    <string name="description">Event Description:</string>
-    <string name="food_types">Types of food:</string>
+    <string name="name">Name:</string>
+    <string name="description">Description:</string>
+    <string name="food_types">Food:</string>
     <string name="parse_app_id">hX4SIkYg6kaNIHMWUlrs6FUqgQovvIXLFYYTDHk3</string>
     <string name="parse_client_id">cUbWKQ8w4q6uYOV5SbWPKRiOXlyRjGwuPyMv5UXe</string>
     <string name="help_string">Welcome to Fwip!\n\nClick on markers to find out about food near you, or click the New Event button to tell others about your food!\n\nClick anywhere to close.</string>

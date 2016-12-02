@@ -35,6 +35,7 @@ import android.util.Log;
 import android.Manifest;
 import android.os.Build;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -700,11 +701,18 @@ public class PostingMapActivity extends FragmentActivity implements
             public void done(List<ParseObject> objects, ParseException e) {
                 if (e == null) {
                     // successful
+                    Date curDate = new Date();
                     for (ParseObject this_marker : objects) {
                         LatLng new_position = new LatLng(this_marker.getDouble("latitude"), this_marker.getDouble("longitude"));
-                        mMap.addMarker(new MarkerOptions().position(new_position)
-                                .title(this_marker.getString("name"))
-                                .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
+                        if(this_marker.getDate("clear_time") != null
+                                && this_marker.getDate("clear_time").after(curDate)) {
+                            mMap.addMarker(new MarkerOptions().position(new_position)
+                                    .title(this_marker.getString("name"))
+                                    .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
+                        }
+                        else {
+                            this_marker.deleteInBackground();
+                        }
                     }
                 } else {
                     // failed
