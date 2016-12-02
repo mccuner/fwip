@@ -266,7 +266,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private FrameLayout help_layout;
     private String uID = null;
 
-
+    private Button deleteBtn;
 
     private static final int RC_SIGN_IN = 9000;
 
@@ -406,6 +406,7 @@ public class PostingMapActivity extends FragmentActivity implements
                                 newUser.put("userID", uID);
                                 newUser.put("count", "0");
                                 newUser.saveInBackground();
+                                object.saveInBackground();
                             }
                             else {
                                 // unkown error
@@ -688,7 +689,7 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap.getUiSettings().setMapToolbarEnabled(false);
 
         // Set location button
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+//        mMap.getUiSettings().setMyLocationButtonEnabled(true);
 
         // Set all of the listeners
         mMap.setOnMarkerClickListener(this);
@@ -747,6 +748,46 @@ public class PostingMapActivity extends FragmentActivity implements
             @Override
             public void onClick(View v) {
                 help_window.dismiss();
+            }
+        });
+    }
+
+    public void onDeleteClick(View view) {
+        deleteBtn = (Button) findViewById(R.id.delete_event_button);
+        ParseQuery<ParseObject> query = new ParseQuery("Users");
+        query.whereEqualTo("userID", uID);
+        query.getFirstInBackground(new GetCallback<ParseObject>() {
+            @Override
+            public void done(ParseObject object, ParseException e) {
+                // User exists in the database
+                if(e == null) {
+                    Log.d("M", String.valueOf(object.get("creatorID")));
+                    // Nothing to delete
+                    if(object.get("count") == "0") {
+                        Toast.makeText(getApplicationContext(),
+                                "You have no markers to delete!",
+                                Toast.LENGTH_LONG);
+                    }
+                    // Delete the user's marker
+                    else {
+                        ParseQuery<ParseObject> markerQuery = new ParseQuery("Events");
+                        markerQuery.whereEqualTo("creatorID", uID);
+                        markerQuery.getFirstInBackground(new GetCallback<ParseObject>() {
+                            @Override
+                            public void done(ParseObject object, ParseException e) {
+                                // The marker exists in the database
+                                if(e == null) {
+                                    Log.d("M", "DELETING MARKER");
+                                    object.deleteInBackground();
+                                }
+                                // Why the shit would this happen
+                                else {
+                                    Log.d("M", "USER DOES NOT HAVE AN EVENT");
+                                }
+                            }
+                        });
+                    }
+                }
             }
         });
     }
@@ -835,6 +876,7 @@ public class PostingMapActivity extends FragmentActivity implements
                                         if(object.get("count") == "1") {
                                             Log.d("M", "RESETTING USER COUNT");
                                             object.put("count", "0");
+                                            object.saveInBackground();
                                         }
                                         else {
                                             Log.d("M", "UH OH");
