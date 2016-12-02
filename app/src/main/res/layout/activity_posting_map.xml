@@ -27,13 +27,18 @@
         android:typeface="sans"
         android:textAllCaps="false"/>
 
-    <!--<Button-->
-        <!--android:id="@+id/clearButton"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_gravity="top|left"-->
-        <!--android:text="Clear"-->
-        <!--android:onClick="clearMarkers"/>-->
+    <Button
+        android:id="@+id/delete_event_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|right"
+        android:text="@string/delete_text"
+        android:backgroundTint="@color/purple"
+        android:textColor="@color/offWhite"
+        android:textSize="16sp"
+        android:visibility="visible"
+        android:typeface="sans"
+        android:textAllCaps="false"/>
 
     <Button
         android:id="@+id/help_button"

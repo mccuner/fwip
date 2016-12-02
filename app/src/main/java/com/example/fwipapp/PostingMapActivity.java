@@ -404,7 +404,7 @@ public class PostingMapActivity extends FragmentActivity implements
                                 Log.d("M", "USER DOES NOT EXIST IN DATABASE");
                                 ParseObject newUser = new ParseObject("Users");
                                 newUser.put("userID", uID);
-                                newUser.put("count", 0);
+                                newUser.put("count", "0");
                                 newUser.saveInBackground();
                             }
                             else {
@@ -564,7 +564,7 @@ public class PostingMapActivity extends FragmentActivity implements
                         if(e == null) {
                             // User has placed 0 markers
                             if(object.get("count") == "0") {
-                                object.put("count", 1);
+                                object.put("count", "1");
                                 LatLng location = foodMarker.getPosition();
                                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                                         .position(location)
@@ -580,6 +580,7 @@ public class PostingMapActivity extends FragmentActivity implements
                                 new_parse_marker.put("snippet", new_event_marker.getSnippet());
                                 new_parse_marker.put("clear_time", new_event_data.getClear_Time());
                                 new_parse_marker.put("created_time", new_event_data.getCreated());
+                                new_parse_marker.put("creatorID", uID);
                                 new_parse_marker.saveInBackground();
                             }
                             else {
@@ -760,14 +761,6 @@ public class PostingMapActivity extends FragmentActivity implements
                 != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                //TODO:
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-                //Prompt the user once explanation has been shown
-                //(just doing it here for now, note that with this code, no explanation is shown)
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSIONS_REQUEST_LOCATION);
@@ -822,7 +815,8 @@ public class PostingMapActivity extends FragmentActivity implements
                     // successful
                     Date curDate = new Date();
                     for (ParseObject this_marker : objects) {
-                        LatLng new_position = new LatLng(this_marker.getDouble("latitude"), this_marker.getDouble("longitude"));
+                        LatLng new_position = new LatLng(this_marker.getDouble("latitude"),
+                                this_marker.getDouble("longitude"));
                         if(this_marker.getDate("clear_time") != null
                                 && this_marker.getDate("clear_time").after(curDate)) {
                             mMap.addMarker(new MarkerOptions().position(new_position)
@@ -831,6 +825,28 @@ public class PostingMapActivity extends FragmentActivity implements
                                     .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
                         }
                         else {
+                            ParseQuery<ParseObject> query = new ParseQuery("Users");
+                            query.whereEqualTo("userID", this_marker.getString("creatorID"));
+                            query.getFirstInBackground(new GetCallback<ParseObject>() {
+                                @Override
+                                public void done(ParseObject object, ParseException e) {
+                                    if(e == null) {
+                                        Log.d("M", "USER EXISTS IN DATABASE");
+                                        if(object.get("count") == "1") {
+                                            Log.d("M", "RESETTING USER COUNT");
+                                            object.put("count", "0");
+                                        }
+                                        else {
+                                            Log.d("M", "UH OH");
+                                        }
+                                    }
+                                    else {
+                                        Log.d("M", "USER DOES NOT EXIST IN DATABASE");
+
+                                    }
+                                }
+                            });
+                            // Delete the marker
                             this_marker.deleteInBackground();
                         }
                     }
