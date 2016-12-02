@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:ellipsize="end"
-            android:textColor="@color/colorPrimaryDark"
+            android:textColor="@color/purple"
             android:textSize="24sp"
             android:maxLines="1"
             android:layout_marginLeft="10dp"

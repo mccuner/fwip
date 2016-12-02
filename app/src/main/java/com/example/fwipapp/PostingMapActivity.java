@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
@@ -52,6 +53,10 @@ import android.view.LayoutInflater;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -161,11 +166,11 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
         }
 
-        public EventData(String name, String description, String food, String location) {
+        public EventData(String name, String description, String food) {
             this.Name = name;
             this.Description = description;
             this.Food = food;
-            this.Location = location;
+//            this.Location = location;
             this.Clear_Time = Calendar.getInstance();
             this.Clear_Time.setTime(new Date());
             this.Created = Clear_Time.getTime(); //now
@@ -189,7 +194,7 @@ public class PostingMapActivity extends FragmentActivity implements
             return Created;
         }
 
-        public String getLocation() { return Location; }
+//        public String getLocation() { return Location; }
 
         public Date getLast_Updated() {
             return Last_Updated;
@@ -239,6 +244,7 @@ public class PostingMapActivity extends FragmentActivity implements
      */
     private GoogleMap mMap;
     public GoogleApiClient mGoogleApiClient;
+    public GoogleApiClient mGoogleApiClientUser;
     Location foodLocation;  // This is the last known location of the food marker
     Marker foodMarker;      // This is the purple marker
     LocationRequest mLocationRequest;
@@ -247,7 +253,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_name;
     private String new_desc;
     private String new_food;
-    private String new_location;
+//    private String new_location;
     private EventData new_event_data = new EventData();
     private HashMap allMarkersMap = new HashMap<Marker, EventData>();
     private PopupWindow new_event_window;
@@ -258,6 +264,11 @@ public class PostingMapActivity extends FragmentActivity implements
     private PopupWindow help_window;
     private LayoutInflater help_inflater;
     private FrameLayout help_layout;
+    private String uID = null;
+
+
+
+    private static final int RC_SIGN_IN = 9000;
 
     // TODO: might not need this or idk
     @Override
@@ -319,20 +330,12 @@ public class PostingMapActivity extends FragmentActivity implements
                 }
             }
             TextView dateUi = ((TextView) view.findViewById(R.id.dateTime));
-            if (parts.length > 3) {
-                SpannableString dateText = new SpannableString(parts[3]);
+            if (parts.length > 2) {
+                SpannableString dateText = new SpannableString(parts[2]);
                 dateUi.setText(dateText);
             } else {
                 dateUi.setText("");
             }
-
-//            TextView locationUi = ((TextView) view.findViewById(R.id.location));
-//            if (parts.length > 2) {
-//                SpannableString locationText = new SpannableString(parts[2]);
-//                locationUi.setText(locationText);
-//            } else {
-//                locationUi.setText("");
-//            }
         }
     }
 
@@ -349,6 +352,75 @@ public class PostingMapActivity extends FragmentActivity implements
         mGoogleApiClient.connect();
     }
 
+    protected synchronized void buildGoogleApiClientUser() {
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleApiClientUser = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
+
+        Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClientUser);
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d("M", "ON ACTIVITY RESULT");
+        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            Log.d("M", result.toString());
+            Log.d("M", String.valueOf(result.getStatus().getStatusCode()));
+            handleSignInResult(result);
+        }
+    }
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d("M", "HANDLE SIGN IN RESULT");
+        if (result.isSuccess()) {
+            Log.d("M", "SUCCESSFUL LOG IN");
+            GoogleSignInAccount acct = result.getSignInAccount();
+            uID = acct.getId();
+            if(uID != null) {
+                Log.d("M", acct.getDisplayName());
+                Log.d("M", uID);
+                ParseQuery<ParseObject> query = ParseQuery.getQuery("Users");
+                query.whereEqualTo("userID", uID);
+                query.getFirstInBackground(new GetCallback<ParseObject>() {
+                    @Override
+                    public void done(ParseObject object, ParseException e) {
+                        if(e == null) {
+                            // object exists
+                            // do nothing
+                            Log.d("M", "USER EXISTS IN DATABASE");
+                        }
+                        else {
+                            if(e.getCode() == ParseException.OBJECT_NOT_FOUND) {
+                                // object does not exist
+                                Log.d("M", "USER DOES NOT EXIST IN DATABASE");
+                                ParseObject newUser = new ParseObject("Users");
+                                newUser.put("userID", uID);
+                                newUser.put("count", 0);
+                                newUser.saveInBackground();
+                            }
+                            else {
+                                // unkown error
+                                Log.d("M", "UNKNOWN ERROR IN QUERY");
+                            }
+                        }
+                    }
+                });
+            }
+        } else {
+            Log.d("M", "UNSUCCESSFUL LOG IN");
+            buildGoogleApiClientUser();
+        }
+    }
+
     /*
      * Runs on when Fwip is started
      */
@@ -357,6 +429,9 @@ public class PostingMapActivity extends FragmentActivity implements
         Log.d("M", "ON CREATE");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_posting_map);
+
+        // Connect to Google UID
+        buildGoogleApiClientUser();
 
         // connect to parse database
         Parse.initialize(new Parse.Configuration.Builder(this.getApplicationContext())
@@ -387,8 +462,6 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
-                new_location = extras.getString("location");
-
             }
         } else {
             newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
@@ -480,23 +553,47 @@ public class PostingMapActivity extends FragmentActivity implements
         finalize_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LatLng location = foodMarker.getPosition();
-                Marker new_event_marker = mMap.addMarker(new MarkerOptions()
-                        .position(location)
-                        .title(new_name)
-                        .snippet(new_desc + "---" + new_food + "---" + new_location + "---" + new_event_data.getCreated()));
 
-                // save location and data with marker
-                allMarkersMap.put(new_event_marker, new_event_data);
-//                markerList.add(new_event_marker);
-                ParseObject new_parse_marker = new ParseObject("Events");
-                new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
-                new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
-                new_parse_marker.put("name", new_name);
-                new_parse_marker.put("snippet", new_event_marker.getSnippet());
-                new_parse_marker.put("clear_time", new_event_data.getClear_Time());
-                new_parse_marker.put("created_time", new_event_data.getCreated());
-                new_parse_marker.saveInBackground();
+
+                ParseQuery<ParseObject> query = new ParseQuery("Users");
+                query.whereEqualTo("userID", uID);
+                query.getFirstInBackground(new GetCallback<ParseObject>() {
+                    @Override
+                    public void done(ParseObject object, ParseException e) {
+                        // User exists in database
+                        if(e == null) {
+                            // User has placed 0 markers
+                            if(object.get("count") == "0") {
+                                object.put("count", 1);
+                                LatLng location = foodMarker.getPosition();
+                                Marker new_event_marker = mMap.addMarker(new MarkerOptions()
+                                        .position(location)
+                                        .title(new_name)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                                        .snippet(new_desc + "---" + new_food + "---" + new_event_data.getCreated()));
+                                // save location and data with marker
+                                allMarkersMap.put(new_event_marker, new_event_data);
+                                ParseObject new_parse_marker = new ParseObject("Events");
+                                new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
+                                new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
+                                new_parse_marker.put("name", new_name);
+                                new_parse_marker.put("snippet", new_event_marker.getSnippet());
+                                new_parse_marker.put("clear_time", new_event_data.getClear_Time());
+                                new_parse_marker.put("created_time", new_event_data.getCreated());
+                                new_parse_marker.saveInBackground();
+                            }
+                            else {
+                                Log.d("M", "USER HAS ASSOCIATED MARKER");
+                                Toast.makeText(getApplicationContext(),
+                                        "You may only place 1 marker at a time!",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+                        else {
+                            Log.d("M", "USER DOES NOT EXIST IN DATABASE");
+                        }
+                    }
+                });
 
                 // remove purple marker
                 foodMarker.remove();
@@ -569,7 +666,7 @@ public class PostingMapActivity extends FragmentActivity implements
         mMap = googleMap;
 
         //todo: delete me
-        mMap.getUiSettings().setZoomControlsEnabled(true);
+//        mMap.getUiSettings().setZoomControlsEnabled(true);
 
         // Initialize Google Play Services
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -612,7 +709,6 @@ public class PostingMapActivity extends FragmentActivity implements
         marker.showInfoWindow();
         return false;
     }
-
 
     /*
      * Called when the user's location changes
@@ -731,6 +827,7 @@ public class PostingMapActivity extends FragmentActivity implements
                                 && this_marker.getDate("clear_time").after(curDate)) {
                             mMap.addMarker(new MarkerOptions().position(new_position)
                                     .title(this_marker.getString("name"))
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
                                     .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
                         }
                         else {

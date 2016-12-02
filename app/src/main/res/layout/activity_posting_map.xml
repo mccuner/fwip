@@ -20,9 +20,12 @@
         android:layout_gravity="bottom|end"
         android:text="@string/new_act_button"
         android:background="@drawable/button"
-        android:textColor="#000000"
+        android:textColor="@color/offWhite"
+        android:textSize="20sp"
         android:visibility="visible"
-        />
+        android:layout_margin="@dimen/activity_vertical_margin"
+        android:typeface="sans"
+        android:textAllCaps="false"/>
 
     <!--<Button-->
         <!--android:id="@+id/clearButton"-->
@@ -37,8 +40,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
-        android:text="HELP"
-        android:onClick="onHelpClick"/>
+        android:text="Help!"
+        android:backgroundTint="@color/offWhite"
+        android:textColor="@color/purple"
+        android:onClick="onHelpClick"
+        android:textAllCaps="false"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -48,24 +54,32 @@
         android:layout_weight="2">
         <Button
             android:id="@+id/save_event_button"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_gravity="left"
             android:text="@string/finalize_event"
             android:background="@drawable/button"
-            android:textColor="#000000"
+            android:textColor="@color/offWhite"
             android:visibility="gone"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="8dp"/>
 
         <Button
             android:id="@+id/cancel_event_button"
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="right"
             android:text="@string/cancel"
             android:background="@drawable/bad_button"
-            android:textColor="#000000"
+            android:textColor="@color/purple"
             android:visibility="gone"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="16dp"/>
     </LinearLayout>
 </FrameLayout>
