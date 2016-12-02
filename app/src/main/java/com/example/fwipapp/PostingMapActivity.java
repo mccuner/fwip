@@ -148,6 +148,7 @@ public class PostingMapActivity extends FragmentActivity implements
         private String Name;
         private String Description;
         private String Food;
+        private String Location;
         private Date Created;
         private Date Last_Updated;
         private Calendar Clear_Time;
@@ -160,10 +161,11 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
         }
 
-        public EventData(String name, String description, String food) {
+        public EventData(String name, String description, String food, String location) {
             this.Name = name;
             this.Description = description;
             this.Food = food;
+            this.Location = location;
             this.Clear_Time = Calendar.getInstance();
             this.Clear_Time.setTime(new Date());
             this.Created = Clear_Time.getTime(); //now
@@ -187,6 +189,8 @@ public class PostingMapActivity extends FragmentActivity implements
             return Created;
         }
 
+        public String getLocation() { return Location; }
+
         public Date getLast_Updated() {
             return Last_Updated;
         }
@@ -207,6 +211,8 @@ public class PostingMapActivity extends FragmentActivity implements
         public void setFood(String new_food) {
             this.Food = new_food;
         }
+
+        public void setLocation(String new_location) { this.Location = new_location; }
 
         public void setDates(Date time) {
             this.Created = this.Last_Updated = time;
@@ -241,6 +247,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_name;
     private String new_desc;
     private String new_food;
+    private String new_location;
     private EventData new_event_data = new EventData();
     private HashMap allMarkersMap = new HashMap<Marker, EventData>();
     private PopupWindow new_event_window;
@@ -312,11 +319,19 @@ public class PostingMapActivity extends FragmentActivity implements
                 }
             }
             TextView dateUi = ((TextView) view.findViewById(R.id.dateTime));
-            if (parts.length > 2) {
-                SpannableString dateText = new SpannableString(parts[2]);
+            if (parts.length > 3) {
+                SpannableString dateText = new SpannableString(parts[3]);
                 dateUi.setText(dateText);
             } else {
                 dateUi.setText("");
+            }
+
+            TextView locationUi = ((TextView) view.findViewById(R.id.location));
+            if (parts.length > 2) {
+                SpannableString locationText = new SpannableString(parts[2]);
+                locationUi.setText(locationText);
+            } else {
+                locationUi.setText("");
             }
         }
     }
@@ -372,12 +387,12 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_name = extras.getString("name");
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
+                new_location = extras.getString("location");
 
             }
         } else {
             newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
         }
-        Log.d("M", newString);
 
         final Button new_event_button = (Button) findViewById(R.id.new_event_button);
         new_event_layout = (FrameLayout) findViewById(R.id.map);
@@ -436,10 +451,14 @@ public class PostingMapActivity extends FragmentActivity implements
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
                         food_el.setTextColor(Color.BLACK);
                         new_food = food_el.getText().toString();
+                        EditText location_el = (EditText) container.findViewById(R.id.InputLocation);
+                        location_el.setTextColor(Color.BLACK);
+                        new_location = location_el.getText().toString();
 
                         new_event_data.setName(new_name);
                         new_event_data.setDesc(new_desc);
                         new_event_data.setFood(new_food);
+                        new_event_data.setLocation(new_location);
 
                         // sets created time to now, last_upt to now, clear_time to an hour from now
                         new_event_data.setDates(new Date());
@@ -465,7 +484,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(new_name)
-                        .snippet(new_desc + "---" + new_food + "---" + new_event_data.getCreated()));
+                        .snippet(new_desc + "---" + new_food + "---" + new_location + "---" + new_event_data.getCreated()));
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
@@ -548,6 +567,7 @@ public class PostingMapActivity extends FragmentActivity implements
     public void onMapReady(GoogleMap googleMap) {
         Log.d("M", "ON MAP READY");
         mMap = googleMap;
+        mMap.getUiSettings().setZoomControlsEnabled(true);
 
         // Initialize Google Play Services
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -590,6 +610,7 @@ public class PostingMapActivity extends FragmentActivity implements
         marker.showInfoWindow();
         return false;
     }
+
 
     /*
      * Called when the user's location changes
