@@ -76,27 +76,27 @@
         android:layout_alignParentRight="true"
         />
 
-    <!--event Location -->
-    <TextView
-        android:id="@+id/FoodLocation"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/food_location"
-        android:textColor="#000000"
-        android:layout_below="@id/InputFood"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+    <!--&lt;!&ndash;event Location &ndash;&gt;-->
+    <!--<TextView-->
+        <!--android:id="@+id/FoodLocation"-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/food_location"-->
+        <!--android:textColor="#000000"-->
+        <!--android:layout_below="@id/InputFood"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_alignParentStart="true" />-->
 
-    <EditText
-        android:id="@+id/InputLocation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:inputType="text"
-        android:textColor="@color/colorPrimaryDark"
-        android:layout_below="@id/FoodLocation"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        />
+    <!--<EditText-->
+        <!--android:id="@+id/InputLocation"-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:inputType="text"-->
+        <!--android:textColor="@color/colorPrimaryDark"-->
+        <!--&lt;!&ndash;android:layout_below="@id/FoodLocation"&ndash;&gt;-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_alignParentRight="true"-->
+        <!--/>-->
 
     <Button
         android:id="@+id/Cancel"

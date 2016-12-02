@@ -212,7 +212,7 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Food = new_food;
         }
 
-        public void setLocation(String new_location) { this.Location = new_location; }
+//        public void setLocation(String new_location) { this.Location = new_location; }
 
         public void setDates(Date time) {
             this.Created = this.Last_Updated = time;
@@ -326,13 +326,13 @@ public class PostingMapActivity extends FragmentActivity implements
                 dateUi.setText("");
             }
 
-            TextView locationUi = ((TextView) view.findViewById(R.id.location));
-            if (parts.length > 2) {
-                SpannableString locationText = new SpannableString(parts[2]);
-                locationUi.setText(locationText);
-            } else {
-                locationUi.setText("");
-            }
+//            TextView locationUi = ((TextView) view.findViewById(R.id.location));
+//            if (parts.length > 2) {
+//                SpannableString locationText = new SpannableString(parts[2]);
+//                locationUi.setText(locationText);
+//            } else {
+//                locationUi.setText("");
+//            }
         }
     }
 
@@ -451,14 +451,14 @@ public class PostingMapActivity extends FragmentActivity implements
                         EditText food_el = (EditText) container.findViewById(R.id.InputFood);
                         food_el.setTextColor(Color.BLACK);
                         new_food = food_el.getText().toString();
-                        EditText location_el = (EditText) container.findViewById(R.id.InputLocation);
-                        location_el.setTextColor(Color.BLACK);
-                        new_location = location_el.getText().toString();
+//                        EditText location_el = (EditText) container.findViewById(R.id.InputLocation);
+//                        location_el.setTextColor(Color.BLACK);
+//                        new_location = location_el.getText().toString();
 
                         new_event_data.setName(new_name);
                         new_event_data.setDesc(new_desc);
                         new_event_data.setFood(new_food);
-                        new_event_data.setLocation(new_location);
+//                        new_event_data.setLocation(new_location);
 
                         // sets created time to now, last_upt to now, clear_time to an hour from now
                         new_event_data.setDates(new Date());
@@ -567,6 +567,8 @@ public class PostingMapActivity extends FragmentActivity implements
     public void onMapReady(GoogleMap googleMap) {
         Log.d("M", "ON MAP READY");
         mMap = googleMap;
+
+        //todo: delete me
         mMap.getUiSettings().setZoomControlsEnabled(true);
 
         // Initialize Google Play Services
