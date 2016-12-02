@@ -318,16 +318,16 @@ public class PostingMapActivity extends FragmentActivity implements
                 }
             }
             TextView dateUi = ((TextView) view.findViewById(R.id.dateTime));
-            if (parts.length > 2) {
-                SpannableString dateText = new SpannableString(parts[2]);
+            if (parts.length > 3) {
+                SpannableString dateText = new SpannableString(parts[3]);
                 dateUi.setText(dateText);
             } else {
                 dateUi.setText("");
             }
 
             TextView locationUi = ((TextView) view.findViewById(R.id.location));
-            if (parts.length > 3) {
-                SpannableString locationText = new SpannableString(parts[3]);
+            if (parts.length > 2) {
+                SpannableString locationText = new SpannableString(parts[2]);
                 locationUi.setText(locationText);
             } else {
                 locationUi.setText("");
@@ -483,7 +483,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(new_name)
-                        .snippet(new_desc + "---" + new_food + "---" + new_event_data.getCreated() + "---" + new_location));
+                        .snippet(new_desc + "---" + new_food + "---" + new_location + "---" + new_event_data.getCreated()));
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
