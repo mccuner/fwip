@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -149,6 +150,7 @@ public class PostingMapActivity extends FragmentActivity implements
         private String Description;
         private String Food;
         private String Location;
+        private String UserId;
         private Date Created;
         private Date Last_Updated;
         private Calendar Clear_Time;
@@ -161,11 +163,12 @@ public class PostingMapActivity extends FragmentActivity implements
             this.Clear_Time.add(Calendar.HOUR_OF_DAY, 1); //adds 1 hour
         }
 
-        public EventData(String name, String description, String food, String location) {
+        public EventData(String name, String description, String food, String location, String userId) {
             this.Name = name;
             this.Description = description;
             this.Food = food;
             this.Location = location;
+            this.UserId = userId;
             this.Clear_Time = Calendar.getInstance();
             this.Clear_Time.setTime(new Date());
             this.Created = Clear_Time.getTime(); //now
@@ -191,6 +194,8 @@ public class PostingMapActivity extends FragmentActivity implements
 
         public String getLocation() { return Location; }
 
+        public String getUserId() { return UserId; }
+
         public Date getLast_Updated() {
             return Last_Updated;
         }
@@ -210,6 +215,10 @@ public class PostingMapActivity extends FragmentActivity implements
 
         public void setFood(String new_food) {
             this.Food = new_food;
+        }
+
+        public void setUserId(String userId) {
+            this.UserId = userId;
         }
 
 //        public void setLocation(String new_location) { this.Location = new_location; }
@@ -248,6 +257,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_desc;
     private String new_food;
     private String new_location;
+    private String user_id;
     private EventData new_event_data = new EventData();
     private HashMap allMarkersMap = new HashMap<Marker, EventData>();
     private PopupWindow new_event_window;
@@ -320,7 +330,7 @@ public class PostingMapActivity extends FragmentActivity implements
             }
             TextView dateUi = ((TextView) view.findViewById(R.id.dateTime));
             if (parts.length > 3) {
-                SpannableString dateText = new SpannableString(parts[3]);
+                SpannableString dateText = new SpannableString(parts[4]);
                 dateUi.setText(dateText);
             } else {
                 dateUi.setText("");
@@ -388,7 +398,6 @@ public class PostingMapActivity extends FragmentActivity implements
                 new_desc = extras.getString("desc");
                 new_food = extras.getString("food");
                 new_location = extras.getString("location");
-
             }
         } else {
             newString = (String) savedInstanceState.getSerializable("STRING_I_NEED");
@@ -458,6 +467,7 @@ public class PostingMapActivity extends FragmentActivity implements
                         new_event_data.setName(new_name);
                         new_event_data.setDesc(new_desc);
                         new_event_data.setFood(new_food);
+                        new_event_data.setUserId(user_id);
 //                        new_event_data.setLocation(new_location);
 
                         // sets created time to now, last_upt to now, clear_time to an hour from now
@@ -484,7 +494,7 @@ public class PostingMapActivity extends FragmentActivity implements
                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(new_name)
-                        .snippet(new_desc + "---" + new_food + "---" + new_location + "---" + new_event_data.getCreated()));
+                        .snippet(new_desc + "---" + new_food + "---" + new_location + "---" +  user_id+ "---" + new_event_data.getCreated()) );
 
                 // save location and data with marker
                 allMarkersMap.put(new_event_marker, new_event_data);
@@ -543,6 +553,9 @@ public class PostingMapActivity extends FragmentActivity implements
     @Override
     public void onConnected(Bundle bundle) {
         Log.d("M", "ON CONNECTED");
+        user_id = UUID.randomUUID().toString();
+        Log.d("M", user_id);
+
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(200);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
