@@ -752,6 +752,7 @@ public class PostingMapActivity extends FragmentActivity implements
         });
     }
 
+    // todo: on delete needs listener
     public void onDeleteClick(View view) {
         deleteBtn = (Button) findViewById(R.id.delete_event_button);
         ParseQuery<ParseObject> query = new ParseQuery("Users");
@@ -847,6 +848,7 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Function for loading markers from the Parse database
      */
+    // todo: count doesn't change
     private void loadMarkersFromDatabase() {
         Log.d("M", "loading markers from parse...");
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Events");
