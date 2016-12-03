@@ -38,6 +38,7 @@
         android:textSize="16sp"
         android:visibility="visible"
         android:typeface="sans"
+        android:onClick="onDeleteClick"
         android:textAllCaps="false"/>
 
     <Button

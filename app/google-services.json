@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "284963458111",
+    "project_id": "fwip-1478551784894"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:284963458111:android:c009dec3c3ec769d",
+        "android_client_info": {
+          "package_name": "com.example.fwipapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "284963458111-1qfne761vk8kdktpsgr36f2h8q8ob1fp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fwipapp",
+            "certificate_hash": "B1F84D1B5AFA413E3B5E5345EA7B1D3A3368EA70"
+          }
+        },
+        {
+          "client_id": "284963458111-dqlfm3osv35asvr67m05m5el6qi05gi1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6jdWNpIiBiyzX7KEQLE0e_RU7MYtcZh8"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

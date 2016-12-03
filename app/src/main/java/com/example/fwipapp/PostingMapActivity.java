@@ -388,7 +388,7 @@ public class PostingMapActivity extends FragmentActivity implements
             if(uID != null) {
                 Log.d("M", acct.getDisplayName());
                 Log.d("M", uID);
-                ParseQuery<ParseObject> query = ParseQuery.getQuery("Users");
+                ParseQuery<ParseObject> query = ParseQuery.getQuery("Posters");
                 query.whereEqualTo("userID", uID);
                 query.getFirstInBackground(new GetCallback<ParseObject>() {
                     @Override
@@ -402,11 +402,12 @@ public class PostingMapActivity extends FragmentActivity implements
                             if(e.getCode() == ParseException.OBJECT_NOT_FOUND) {
                                 // object does not exist
                                 Log.d("M", "USER DOES NOT EXIST IN DATABASE");
-                                ParseObject newUser = new ParseObject("Users");
+                                ParseObject newUser = new ParseObject("Posters");
                                 newUser.put("userID", uID);
                                 newUser.put("count", "0");
+                                Log.d("M", "WE ARE GOING TO SAVE USER");
                                 newUser.saveInBackground();
-                                object.saveInBackground();
+
                             }
                             else {
                                 // unkown error
@@ -556,7 +557,7 @@ public class PostingMapActivity extends FragmentActivity implements
             public void onClick(View v) {
 
 
-                ParseQuery<ParseObject> query = new ParseQuery("Users");
+                ParseQuery<ParseObject> query = new ParseQuery("Posters");
                 query.whereEqualTo("userID", uID);
                 query.getFirstInBackground(new GetCallback<ParseObject>() {
                     @Override
@@ -564,8 +565,11 @@ public class PostingMapActivity extends FragmentActivity implements
                         // User exists in database
                         if(e == null) {
                             // User has placed 0 markers
-                            if(object.get("count") == "0") {
+                            Log.d("M", object.getString("count"));
+                            Log.d("M", "this is the count");
+                            if(object.getString("count").equals("0")) {
                                 object.put("count", "1");
+                                object.saveInBackground();
                                 LatLng location = foodMarker.getPosition();
                                 Marker new_event_marker = mMap.addMarker(new MarkerOptions()
                                         .position(location)
@@ -755,16 +759,16 @@ public class PostingMapActivity extends FragmentActivity implements
     // todo: on delete needs listener
     public void onDeleteClick(View view) {
         deleteBtn = (Button) findViewById(R.id.delete_event_button);
-        ParseQuery<ParseObject> query = new ParseQuery("Users");
+        ParseQuery<ParseObject> query = new ParseQuery("Posters");
         query.whereEqualTo("userID", uID);
         query.getFirstInBackground(new GetCallback<ParseObject>() {
             @Override
-            public void done(ParseObject object, ParseException e) {
+            public void done(final ParseObject object, ParseException e) {
                 // User exists in the database
                 if(e == null) {
-                    Log.d("M", String.valueOf(object.get("creatorID")));
+                    Log.d("M", String.valueOf(object));
                     // Nothing to delete
-                    if(object.get("count") == "0") {
+                    if(object.getString("count").equals("0")) {
                         Toast.makeText(getApplicationContext(),
                                 "You have no markers to delete!",
                                 Toast.LENGTH_LONG);
@@ -775,11 +779,13 @@ public class PostingMapActivity extends FragmentActivity implements
                         markerQuery.whereEqualTo("creatorID", uID);
                         markerQuery.getFirstInBackground(new GetCallback<ParseObject>() {
                             @Override
-                            public void done(ParseObject object, ParseException e) {
+                            public void done(ParseObject object2, ParseException e) {
                                 // The marker exists in the database
                                 if(e == null) {
                                     Log.d("M", "DELETING MARKER");
-                                    object.deleteInBackground();
+                                    object2.deleteInBackground();
+                                    object.put("creatorID", "0");
+                                    object.saveInBackground();
                                 }
                                 // Why the shit would this happen
                                 else {
@@ -868,14 +874,14 @@ public class PostingMapActivity extends FragmentActivity implements
                                     .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
                         }
                         else {
-                            ParseQuery<ParseObject> query = new ParseQuery("Users");
+                            ParseQuery<ParseObject> query = new ParseQuery("Posters");
                             query.whereEqualTo("userID", this_marker.getString("creatorID"));
                             query.getFirstInBackground(new GetCallback<ParseObject>() {
                                 @Override
                                 public void done(ParseObject object, ParseException e) {
                                     if(e == null) {
                                         Log.d("M", "USER EXISTS IN DATABASE");
-                                        if(object.get("count") == "1") {
+                                        if(object.getString("count").equals("1")) {
                                             Log.d("M", "RESETTING USER COUNT");
                                             object.put("count", "0");
                                             object.saveInBackground();
