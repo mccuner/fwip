@@ -81,12 +81,7 @@ import com.google.android.gms.maps.GoogleMap.OnInfoWindowClickListener;
 import com.parse.*;
 
 /*
-    TODO: Be able to view info about markers
-    TODO: Be able to place markers
     TODO: Be able to edit information for markers
-    TODO: Have custom information for markers
-    TODO: Perhaps add buttons? If time? (eventually)
-    TODO: customize marker image based on type of event (eventually)
  */
 
 public class PostingMapActivity extends FragmentActivity implements
@@ -255,7 +250,7 @@ public class PostingMapActivity extends FragmentActivity implements
     private String new_food;
 //    private String new_location;
     private EventData new_event_data = new EventData();
-    private HashMap allMarkersMap = new HashMap<Marker, EventData>();
+    private HashMap allMarkersMap = new HashMap<String, Marker>();
     private PopupWindow new_event_window;
     private LayoutInflater new_event_inflater;
     private FrameLayout new_event_layout;
@@ -474,76 +469,95 @@ public class PostingMapActivity extends FragmentActivity implements
         new_event_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new_event_button.setVisibility(View.GONE);
-                final Button finalize_button = (Button) findViewById(R.id.save_event_button);
-                new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
-                final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event, null);
-                DisplayMetrics dm = new DisplayMetrics();
-                getWindowManager().getDefaultDisplay().getMetrics(dm);
-
-                int width = dm.widthPixels;
-                int height = dm.heightPixels;
-
-                // Event window for creating event
-                new_event_window = new PopupWindow(container, (int) (width * 0.96), (int) (height * 0.95), false);
-                new_event_window.setTouchable(true);
-                new_event_window.setOutsideTouchable(false);
-                new_event_window.setFocusable(true);
-                new_event_window.update();
-                new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 100);
-
-                // make new, draggable marker
-                if (checkLocationPermission()) {
-                    Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
-                            .title("New Food Marker")
-                            .snippet("Drag Me!")
-                            .draggable(true)
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
-                }
-
-                Button cancel_button = (Button) container.findViewById(R.id.Cancel);
-                cancel_button.setOnClickListener(new View.OnClickListener() {
+                // check to see if user already has an event
+                ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("Events");
+                query.whereEqualTo("creatorID", uID);
+                query.getFirstInBackground(new GetCallback<ParseObject>() {
                     @Override
-                    public void onClick(View v) {
-                        foodMarker.remove();
-                        new_event_window.dismiss();
-                        new_event_button.setVisibility(View.VISIBLE);
-                    }
-                });
-                Button save_button = (Button) container.findViewById(R.id.SaveData);
-                save_button.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        // get data from forms
-                        EditText name_el = (EditText) container.findViewById(R.id.InputName);
-                        name_el.setTextColor(Color.BLACK);
-                        new_name = name_el.getText().toString();
-                        EditText desc_el = (EditText) container.findViewById(R.id.InputDescription);
-                        desc_el.setTextColor(Color.BLACK);
-                        new_desc = desc_el.getText().toString();
-                        EditText food_el = (EditText) container.findViewById(R.id.InputFood);
-                        food_el.setTextColor(Color.BLACK);
-                        new_food = food_el.getText().toString();
+                    public void done(ParseObject object, ParseException e) {
+                        if (e == null){
+                            // this user already has an event!
+                            Log.d("M", "USER HAS ASSOCIATED MARKER");
+                            Toast.makeText(getApplicationContext(),
+                                    "You may only place 1 marker at a time!",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                        else {
+                            new_event_button.setVisibility(View.GONE);
+                            final Button finalize_button = (Button) findViewById(R.id.save_event_button);
+                            new_event_inflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                            final ViewGroup container = (ViewGroup) new_event_inflater.inflate(R.layout.content_post__event, null);
+                            DisplayMetrics dm = new DisplayMetrics();
+                            getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+                            int width = dm.widthPixels;
+                            int height = dm.heightPixels;
+
+                            // Event window for creating event
+                            new_event_window = new PopupWindow(container, (int) (width * 0.96), (int) (height * 0.95), false);
+                            new_event_window.setTouchable(true);
+                            new_event_window.setOutsideTouchable(false);
+                            new_event_window.setFocusable(true);
+                            new_event_window.update();
+                            new_event_window.showAtLocation(new_event_layout, Gravity.NO_GRAVITY, 33, 100);
+
+                            // make new, draggable marker
+                            if (checkLocationPermission()) {
+                                Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                foodMarker = mMap.addMarker(new MarkerOptions().position(latLng)
+                                        .title("New Food Marker")
+                                        .snippet("Drag Me!")
+                                        .draggable(true)
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET)));
+                            }
+
+                            Button cancel_button = (Button) container.findViewById(R.id.Cancel);
+                            cancel_button.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    foodMarker.remove();
+                                    new_event_window.dismiss();
+                                    new_event_button.setVisibility(View.VISIBLE);
+                                }
+                            });
+                            Button save_button = (Button) container.findViewById(R.id.SaveData);
+                            save_button.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    // get data from forms
+                                    EditText name_el = (EditText) container.findViewById(R.id.InputName);
+                                    name_el.setTextColor(Color.BLACK);
+                                    new_name = name_el.getText().toString();
+                                    EditText desc_el = (EditText) container.findViewById(R.id.InputDescription);
+                                    desc_el.setTextColor(Color.BLACK);
+                                    new_desc = desc_el.getText().toString();
+                                    EditText food_el = (EditText) container.findViewById(R.id.InputFood);
+                                    food_el.setTextColor(Color.BLACK);
+                                    new_food = food_el.getText().toString();
 //                        EditText location_el = (EditText) container.findViewById(R.id.InputLocation);
 //                        location_el.setTextColor(Color.BLACK);
 //                        new_location = location_el.getText().toString();
 
-                        new_event_data.setName(new_name);
-                        new_event_data.setDesc(new_desc);
-                        new_event_data.setFood(new_food);
+                                    new_event_data.setName(new_name);
+                                    new_event_data.setDesc(new_desc);
+                                    new_event_data.setFood(new_food);
 //                        new_event_data.setLocation(new_location);
 
-                        // sets created time to now, last_upt to now, clear_time to an hour from now
-                        new_event_data.setDates(new Date());
+                                    // sets created time to now, last_upt to now, clear_time to an hour from now
+                                    new_event_data.setDates(new Date());
 
-                        new_event_window.dismiss();
-                        final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
-                        finalize_button.setVisibility(View.VISIBLE);
-                        cancel_event_button.setVisibility(View.VISIBLE);
+                                    new_event_window.dismiss();
+                                    final Button cancel_event_button = (Button) findViewById(R.id.cancel_event_button);
+                                    finalize_button.setVisibility(View.VISIBLE);
+                                    cancel_event_button.setVisibility(View.VISIBLE);
+                                }
+                            });
+                        }
                     }
                 });
+
+
             }
         });
 
@@ -567,33 +581,27 @@ public class PostingMapActivity extends FragmentActivity implements
                             // User has placed 0 markers
                             Log.d("M", object.getString("count"));
                             Log.d("M", "this is the count");
-                            if(object.getString("count").equals("0")) {
-                                object.put("count", "1");
-                                object.saveInBackground();
-                                LatLng location = foodMarker.getPosition();
-                                Marker new_event_marker = mMap.addMarker(new MarkerOptions()
-                                        .position(location)
-                                        .title(new_name)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                                        .snippet(new_desc + "---" + new_food + "---" + new_event_data.getCreated()));
-                                // save location and data with marker
-                                allMarkersMap.put(new_event_marker, new_event_data);
-                                ParseObject new_parse_marker = new ParseObject("Events");
-                                new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
-                                new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
-                                new_parse_marker.put("name", new_name);
-                                new_parse_marker.put("snippet", new_event_marker.getSnippet());
-                                new_parse_marker.put("clear_time", new_event_data.getClear_Time());
-                                new_parse_marker.put("created_time", new_event_data.getCreated());
-                                new_parse_marker.put("creatorID", uID);
-                                new_parse_marker.saveInBackground();
-                            }
-                            else {
-                                Log.d("M", "USER HAS ASSOCIATED MARKER");
-                                Toast.makeText(getApplicationContext(),
-                                        "You may only place 1 marker at a time!",
-                                        Toast.LENGTH_LONG).show();
-                            }
+
+                            object.put("count", "1");
+                            object.saveInBackground();
+                            LatLng location = foodMarker.getPosition();
+                            String df = new SimpleDateFormat("HH:mm dd/MM").format(new_event_data.getCreated());
+                            Marker new_event_marker = mMap.addMarker(new MarkerOptions()
+                                    .position(location)
+                                    .title(new_name)
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                                    .snippet(new_desc + "---" + new_food + "---" + df));
+                            // save location and data with marker
+                            allMarkersMap.put(uID, new_event_marker);
+                            ParseObject new_parse_marker = new ParseObject("Events");
+                            new_parse_marker.put("latitude", new_event_marker.getPosition().latitude);
+                            new_parse_marker.put("longitude", new_event_marker.getPosition().longitude);
+                            new_parse_marker.put("name", new_name);
+                            new_parse_marker.put("snippet", new_event_marker.getSnippet());
+                            new_parse_marker.put("clear_time", new_event_data.getClear_Time());
+                            new_parse_marker.put("created_time", new_event_data.getCreated());
+                            new_parse_marker.put("creatorID", uID);
+                            new_parse_marker.saveInBackground();
                         }
                         else {
                             Log.d("M", "USER DOES NOT EXIST IN DATABASE");
@@ -756,25 +764,26 @@ public class PostingMapActivity extends FragmentActivity implements
         });
     }
 
-    // todo: on delete needs listener
     public void onDeleteClick(View view) {
-        deleteBtn = (Button) findViewById(R.id.delete_event_button);
+//        deleteBtn = (Button) findViewById(R.id.delete_event_button);
         ParseQuery<ParseObject> query = new ParseQuery("Posters");
         query.whereEqualTo("userID", uID);
         query.getFirstInBackground(new GetCallback<ParseObject>() {
             @Override
-            public void done(final ParseObject object, ParseException e) {
+            public void done(ParseObject object, ParseException e) {
                 // User exists in the database
                 if(e == null) {
-                    Log.d("M", String.valueOf(object));
+                    Log.d("M", "User exists in database, id is: " + uID);
                     // Nothing to delete
                     if(object.getString("count").equals("0")) {
                         Toast.makeText(getApplicationContext(),
                                 "You have no markers to delete!",
-                                Toast.LENGTH_LONG);
+                                Toast.LENGTH_LONG).show();
                     }
                     // Delete the user's marker
                     else {
+                        object.put("count", "0");
+                        object.saveInBackground();
                         ParseQuery<ParseObject> markerQuery = new ParseQuery("Events");
                         markerQuery.whereEqualTo("creatorID", uID);
                         markerQuery.getFirstInBackground(new GetCallback<ParseObject>() {
@@ -784,8 +793,13 @@ public class PostingMapActivity extends FragmentActivity implements
                                 if(e == null) {
                                     Log.d("M", "DELETING MARKER");
                                     object2.deleteInBackground();
-                                    object.put("creatorID", "0");
-                                    object.saveInBackground();
+                                    // we now need to delete the physical marker
+                                    // to do this, I need to implement a hash table.
+                                    Marker victim = (Marker) allMarkersMap.get(uID);
+                                    if (victim != null) victim.remove();
+                                    Toast.makeText(getApplicationContext(),
+                                            "Your event has been deleted!",
+                                            Toast.LENGTH_LONG).show();
                                 }
                                 // Why the shit would this happen
                                 else {
@@ -854,7 +868,6 @@ public class PostingMapActivity extends FragmentActivity implements
     /*
      * Function for loading markers from the Parse database
      */
-    // todo: count doesn't change
     private void loadMarkersFromDatabase() {
         Log.d("M", "loading markers from parse...");
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Events");
@@ -868,12 +881,18 @@ public class PostingMapActivity extends FragmentActivity implements
                                 this_marker.getDouble("longitude"));
                         if(this_marker.getDate("clear_time") != null
                                 && this_marker.getDate("clear_time").after(curDate)) {
-                            mMap.addMarker(new MarkerOptions().position(new_position)
-                                    .title(this_marker.getString("name"))
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
-                                    .snippet(this_marker.getString("snippet") + "---" + this_marker.getDate("created_time")));
+                            // marker has not depreciated, load it into the map
+//                            String df = new SimpleDateFormat("HH:mm dd/MM").format(this_marker.getDate("created_time"));
+//                            Log.d("R", "date formatted is: " + df);
+                            allMarkersMap.put(this_marker.getString("creatorID"),
+                                    mMap.addMarker(new MarkerOptions().position(new_position)
+                                            .title(this_marker.getString("name"))
+                                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                                            .snippet(this_marker.getString("snippet")))
+                            );
                         }
                         else {
+                            // delete the marker from the database, do not load a marker
                             ParseQuery<ParseObject> query = new ParseQuery("Posters");
                             query.whereEqualTo("userID", this_marker.getString("creatorID"));
                             query.getFirstInBackground(new GetCallback<ParseObject>() {
@@ -888,11 +907,12 @@ public class PostingMapActivity extends FragmentActivity implements
                                         }
                                         else {
                                             Log.d("M", "UH OH");
+                                            // should never happen
                                         }
                                     }
                                     else {
                                         Log.d("M", "USER DOES NOT EXIST IN DATABASE");
-
+                                        // should never happen
                                     }
                                 }
                             });
